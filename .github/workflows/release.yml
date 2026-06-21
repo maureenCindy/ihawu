@@ -19,7 +19,7 @@ jobs:
     needs: verify
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Java Toolchain
         uses: actions/setup-java@v4
@@ -49,7 +49,7 @@ jobs:
     needs: publish-artifacts
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Java Toolchain
         uses: actions/setup-java@v4
