@@ -1,0 +1,85 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for Ihawu
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Request
+        
+        Thanks for suggesting an improvement to Ihawu!
+        
+        ### Before You Start
+        - Check if this feature is already planned on our [Project Board](https://github.com/maureenCindy/ihawu/projects)
+        - Search existing issues to avoid duplicates
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: I'm frustrated when I have to create multiple DTOs just to hide fields...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see
+      placeholder: Ihawu should support GraphQL field-level masking automatically...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions you've considered
+      placeholder: I tried using @JsonIgnore but it's not dynamic...
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      description: How would this feature benefit the community?
+      options:
+        - Major - solves a critical pain point
+        - Moderate - significant improvement
+        - Minor - nice to have
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Affected Components
+      description: Which parts of Ihawu would this affect?
+      options:
+        - label: Core (IhawuPrincipal, PrincipalRequest)
+        - label: Spring Boot Integration
+        - label: Ktor Integration
+        - label: OPA Integration
+        - label: Casbin Integration
+        - label: Serialization (Jackson/kotlinx)
+        - label: Documentation
+        - label: Testing Utilities
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Contribution Checklist
+      options:
+        - label: I have searched for existing requests
+          required: true
+        - label: I have read the [Contribution Guidelines](https://github.com/maureenCindy/ihawu/blob/main/CONTRIBUTING.md)
+          required: true
+        - label: I am willing to submit a PR for this feature
+          required: false
