@@ -1,0 +1,193 @@
+name: "Auto-merge Dependabot PRs"
+
+on:
+  pull_request_target:
+# Fallback schedule — retries age-gated PRs that weren't old enough on first run
+# Runs weekdays at 06:00 UTC (08:00 SAST / 07:00 CET / 02:00 EST)
+  schedule:
+    - cron: '0 6 * * 1-5'
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]') ||
+      github.event_name == 'schedule'
+    steps:
+      - name: Fetch Dependabot metadata
+        if: github.event_name == 'pull_request_target'
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          alert-lookup: true
+          compat-lookup: true
+
+      - name: Log update details
+        if: github.event_name == 'pull_request_target'
+        run: |
+          echo "Package: ${{ steps.metadata.outputs.dependency-names }}"
+          echo "Update type: ${{ steps.metadata.outputs.update-type }}"
+          echo "Ecosystem: ${{ steps.metadata.outputs.package-ecosystem }}"
+          echo "GHSA ID: ${{ steps.metadata.outputs.ghsa-id }}"
+          echo "CVSS: ${{ steps.metadata.outputs.cvss }}"
+          echo "Compatibility: ${{ steps.metadata.outputs.compatibility-score }}"
+
+      # Block auto-merge if compatibility score is too low
+      - name: Check compatibility score
+        if: >
+          github.event_name == 'pull_request_target' &&
+          steps.metadata.outputs.compatibility-score != '' &&
+          steps.metadata.outputs.compatibility-score < 75
+        run: |
+          echo "::warning::Compatibility score is ${{ steps.metadata.outputs.compatibility-score }}% — below 75% threshold"
+          gh pr comment "$PR_URL" \
+            --body "Auto-merge skipped: compatibility score is **${{ steps.metadata.outputs.compatibility-score }}%** (threshold: 75%). Please review manually."
+          exit 1
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Security updates — auto-merge regardless of semver bump
+      - name: Auto-merge security updates
+        id: security-merge
+        if: >
+          github.event_name == 'pull_request_target' &&
+          steps.metadata.outputs.ghsa-id != '' &&
+          steps.metadata.outputs.cvss != ''
+        run: |
+          gh pr review --approve "$PR_URL" \
+            --body "Auto-approved: security update for ${{ steps.metadata.outputs.ghsa-id }} (CVSS: ${{ steps.metadata.outputs.cvss }})" \
+            || echo "::warning::Already approved or review failed"
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Patch updates — auto-merge after 3 days to allow community feedback
+      - name: Auto-merge patch updates (age-gated)
+        id: patch-merge
+        if: >
+          github.event_name == 'pull_request_target' &&
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' &&
+          steps.metadata.outputs.ghsa-id == ''
+        run: |
+          CREATED_AT=$(gh pr view "$PR_URL" --json createdAt --jq '.createdAt')
+
+          # Cross-platform date parsing (GNU and BSD)
+          if date -d "2000-01-01" +%s > /dev/null 2>&1; then
+            CREATED_TS=$(date -d "$CREATED_AT" +%s)
+          elif date -jf "%Y-%m-%dT%H:%M:%SZ" "2000-01-01T00:00:00Z" +%s > /dev/null 2>&1; then
+            CREATED_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$CREATED_AT" +%s)
+          else
+            echo "::warning::Unable to parse date — skipping age check, will retry on schedule"
+            exit 0
+          fi
+
+          NOW_TS=$(date +%s)
+          AGE_DAYS=$(( (NOW_TS - CREATED_TS) / 86400 ))
+          echo "PR age: ${AGE_DAYS} days"
+
+          if [ "$AGE_DAYS" -ge 3 ]; then
+            echo "PR is ${AGE_DAYS} days old — approving and merging"
+            gh pr review --approve "$PR_URL" \
+              --body "Auto-approved: patch update aged ${AGE_DAYS} days" \
+              || echo "::warning::Already approved or review failed"
+            gh pr merge --auto --squash "$PR_URL"
+          else
+            echo "::notice::PR is only ${AGE_DAYS} days old — waiting for 3 day cooling period"
+          fi
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Notify on merge failure
+      - name: Notify on auto-merge failure
+        if: >
+          failure() &&
+          github.event_name == 'pull_request_target' &&
+          (steps.security-merge.outcome == 'failure' || steps.patch-merge.outcome == 'failure')
+        run: |
+          gh pr comment "$PR_URL" \
+            --body "Auto-merge failed for this PR. Please review and merge manually."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Schedule fallback — process all open Dependabot PRs that are now old enough
+      - name: Process aged Dependabot PRs (scheduled)
+        id: scheduled-merge
+        if: github.event_name == 'schedule'
+        run: |
+          echo "Checking open Dependabot PRs..."
+
+          PR_DATA=$(gh pr list --author "app/dependabot" --state open --json number,createdAt,url,title --jq '.[] | "\(.number)\t\(.createdAt)\t\(.url)\t\(.title)"')
+
+          if [ -z "$PR_DATA" ]; then
+            echo "No open Dependabot PRs found"
+            echo "## Dependabot Auto-merge Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "No open Dependabot PRs to process." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          NOW_TS=$(date +%s)
+          MERGED=0
+          SKIPPED=0
+          FAILED=0
+
+          echo "## Dependabot Auto-merge Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "| PR | Title | Age (days) | Action |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "$PR_DATA" | while IFS=$'\t' read -r PR_NUMBER CREATED_AT PR_URL TITLE; do
+            if date -d "2000-01-01" +%s > /dev/null 2>&1; then
+              CREATED_TS=$(date -d "$CREATED_AT" +%s)
+            else
+              CREATED_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$CREATED_AT" +%s 2>/dev/null || continue)
+            fi
+
+            AGE_DAYS=$(( (NOW_TS - CREATED_TS) / 86400 ))
+            echo "PR #${PR_NUMBER}: ${AGE_DAYS} days old — ${TITLE}"
+
+            # Patch updates: 3-day gate / Minor updates: 7-day gate
+            IS_MINOR=$(echo "$TITLE" | grep -qi "minor\|from [0-9]*\.[0-9]* to [0-9]*\.[0-9]*" && echo "true" || echo "false")
+
+            if [ "$IS_MINOR" = "true" ]; then
+              GATE_DAYS=7
+            else
+              GATE_DAYS=3
+            fi
+
+            if [ "$AGE_DAYS" -ge "$GATE_DAYS" ]; then
+              echo "  -> Approving and merging PR #${PR_NUMBER} (gate: ${GATE_DAYS} days)"
+              if gh pr review --approve "$PR_URL" \
+                --body "Auto-approved: dependency update aged ${AGE_DAYS} days (scheduled run)" 2>/dev/null && \
+                gh pr merge --auto --squash "$PR_URL" 2>/dev/null; then
+                echo "| #${PR_NUMBER} | ${TITLE} | ${AGE_DAYS} | Merged |" >> "$GITHUB_STEP_SUMMARY"
+                MERGED=$((MERGED + 1))
+              else
+                echo "::warning::PR #${PR_NUMBER}: merge failed — may need manual review"
+                gh pr comment "$PR_URL" \
+                  --body "Scheduled auto-merge failed. Please review and merge manually." 2>/dev/null || true
+                echo "| #${PR_NUMBER} | ${TITLE} | ${AGE_DAYS} | Failed |" >> "$GITHUB_STEP_SUMMARY"
+                FAILED=$((FAILED + 1))
+              fi
+            else
+              echo "  -> Skipping PR #${PR_NUMBER}: ${AGE_DAYS} days old (gate: ${GATE_DAYS} days)"
+              echo "| #${PR_NUMBER} | ${TITLE} | ${AGE_DAYS} | Waiting (${GATE_DAYS}d gate) |" >> "$GITHUB_STEP_SUMMARY"
+              SKIPPED=$((SKIPPED + 1))
+            fi
+          done
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Merged:** ${MERGED} | **Skipped:** ${SKIPPED} | **Failed:** ${FAILED}" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
