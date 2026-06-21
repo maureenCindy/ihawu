@@ -3,6 +3,8 @@
 
 # Log file
 *.log
+logs/
+**/logs/
 
 # BlueJ files
 *.ctxt
@@ -10,8 +12,9 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+# Package Files
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear
@@ -23,5 +26,36 @@
 hs_err_pid*
 replay_pid*
 
-# Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
+
+# Gradle & Kotlin Build Artifacts
+.gradle/
+build/
+**/build/
 .kotlin/
+.incremental/
+
+# IDE Configuration (IntelliJ IDEA)
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+**/out/
+.crac/
+
+# Spring Boot
+.spring-boot-devtools-launcher.status
+
+# Operating System Noise
+.DS_Store
+Thumbs.db
+
+# Security & Local Configurations
+.env
+.env.local
+*.local.properties
+
+# ai
+.claude/local.md
+.claude/CLAUDE.md
+.claude/settings.local.json
