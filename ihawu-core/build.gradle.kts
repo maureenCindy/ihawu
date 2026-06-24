@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    api("com.fasterxml.jackson.core:jackson-databind:2.21.1")
     testImplementation(kotlin("test"))
 }
 
