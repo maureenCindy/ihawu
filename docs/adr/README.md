@@ -10,3 +10,4 @@ supersedes the old one.
 | ADR | Title | Status |
 | --- | --- | --- |
 | [0001](0001-serialization-context-passing.md) | How the principal reaches the masking serializer | Accepted |
+| [0002](0002-request-scoped-policy-caching.md) | How policy resolution is cached for the request lifecycle | Accepted |
