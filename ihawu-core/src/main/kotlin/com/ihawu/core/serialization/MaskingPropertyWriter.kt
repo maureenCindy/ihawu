@@ -7,6 +7,8 @@ import com.ihawu.core.masking.MaskingStrategy
 import com.ihawu.core.policy.FieldPolicy
 import com.ihawu.core.policy.IhawuPrincipal
 import com.ihawu.core.policy.ResourcePolicyResolver
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * A [BeanPropertyWriter] that enforces a single field's [FieldPolicy] at serialization time.
@@ -23,6 +25,15 @@ import com.ihawu.core.policy.ResourcePolicyResolver
  * resolves only once. When no [IhawuPrincipal] is present the writer fails closed: every field is
  * omitted, so the resource serializes as an empty object rather than leaking unmasked data. See
  * `docs/adr/0001-serialization-context-passing.md`.
+ *
+ * The writer also fails closed on *errors*, never leaking the protected payload:
+ * - if [resolver] throws (a misconfiguration or policy-store outage), the failure is memoized and
+ *   every field of the resource is omitted, so it serializes as an empty object. This holds for
+ *   nested resources and collection items, since each resource resolves independently;
+ * - if computing a [MaskingStrategy.REDACT] placeholder throws, that single field is omitted.
+ *
+ * Both failures are logged for diagnosis with the resource (and field) name only — never the
+ * protected value.
  *
  * @param base The original writer this delegates to for unmasked output.
  * @property resolver Resolves the field policies for the [resource].
@@ -44,8 +55,15 @@ internal class MaskingPropertyWriter(
             null -> super.serializeAsField(bean, gen, prov) // not in policy -> normal output
             MaskingStrategy.HIDE -> Unit // omit entirely
             MaskingStrategy.REDACT -> {
+                val value =
+                    try {
+                        policy.placeholder ?: policy.strategy.defaultValue?.invoke() ?: ""
+                    } catch (e: Exception) {
+                        log.error("Ihawu redaction failed for '{}.{}'; omitting field", resource, name, e)
+                        return // fail-closed: omit field
+                    }
                 gen.writeFieldName(name)
-                gen.writeString(policy.placeholder ?: policy.strategy.defaultValue?.invoke() ?: "")
+                gen.writeString(value)
             }
         }
     }
@@ -57,10 +75,22 @@ internal class MaskingPropertyWriter(
 
         val principal = prov.getAttribute(IhawuSerialization.PRINCIPAL) as? IhawuPrincipal
         if (principal == null) {
+            log.warn(
+                "No IhawuPrincipal attached to serialization call, serialization failing closed for resource '{}'. " +
+                    "Attach one via ObjectWriter.withAttribute(IhawuSerialization.PRINCIPAL, principal).",
+                resource,
+            )
             prov.setAttribute(key, MASK_ALL)
             return null
         }
-        val map = resolver.resolve(principal, resource).associateBy { it.field }
+        val map =
+            try {
+                resolver.resolve(principal, resource).associateBy { it.field }
+            } catch (ex: Exception) {
+                log.error("Ihawu masking failed for resource '{}', serialization failing closed", resource, ex)
+                prov.setAttribute(key, MASK_ALL)
+                return null
+            }
         prov.setAttribute(key, map)
         return map
     }
@@ -71,5 +101,6 @@ internal class MaskingPropertyWriter(
     private companion object {
         /** Sentinel memoized when no principal is present, so we don't re-check per property. */
         val MASK_ALL = Any()
+        val log: Logger = LoggerFactory.getLogger(MaskingPropertyWriter::class.java)
     }
 }

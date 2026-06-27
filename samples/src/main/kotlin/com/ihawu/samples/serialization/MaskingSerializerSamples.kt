@@ -2,6 +2,7 @@ package com.ihawu.samples.serialization
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ihawu.core.annotation.IhawuResource
+import com.ihawu.core.exception.IhawuCoreException
 import com.ihawu.core.masking.MaskingStrategy
 import com.ihawu.core.policy.FieldPolicy
 import com.ihawu.core.policy.IhawuPrincipal
@@ -100,6 +101,7 @@ fun maskCollectionItems() {
             .writeValueAsString(profiles)
 
     val tree = mapper.readTree(json)
+
     check(tree.all { !it.has("ssn") }) // every item masked
 }
 
@@ -117,4 +119,28 @@ fun maskFailsClosedWithoutPrincipal() {
     val json = mapper.writeValueAsString(profile)
 
     check(mapper.readTree(json).isEmpty) // {} -> nothing leaked
+}
+
+fun failClosedOnResolverError() {
+    // If the resolver throws — a misconfiguration or a policy-store outage — Ihawu fails closed:
+    // the protected resource serializes as an empty object instead of leaking unmasked data.
+    val failingResolver =
+        object : ResourcePolicyResolver {
+            override fun resolve(
+                principal: IhawuPrincipal,
+                resource: String,
+            ): List<FieldPolicy> = throw IhawuCoreException("policy store unavailable")
+        }
+    val mapper = ObjectMapper().registerModule(IhawuModule(failingResolver))
+    val principal = IhawuPrincipal("u1", roles = setOf("MANAGER"), attributes = emptyMap())
+
+    val profile = EmployeeProfile("Jane Doe", "123-45-6789", 90_000, Address("Harare", "00263"))
+
+    val json =
+        mapper
+            .writer()
+            .withAttribute(IhawuSerialization.PRINCIPAL, principal)
+            .writeValueAsString(profile)
+
+    check(mapper.readTree(json).isEmpty) // {} -> a resolver failure never leaks data
 }

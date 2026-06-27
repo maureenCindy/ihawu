@@ -19,6 +19,7 @@ import com.ihawu.core.policy.ResourcePolicyResolver
  * @sample com.ihawu.samples.serialization.maskEmployeeProfile
  * @sample com.ihawu.samples.serialization.maskCollectionItems
  * @sample com.ihawu.samples.serialization.maskFailsClosedWithoutPrincipal
+ * @sample com.ihawu.samples.serialization.failClosedOnResolverError
  */
 class IhawuModule(
     private val resolver: ResourcePolicyResolver,

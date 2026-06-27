@@ -17,4 +17,9 @@ class MaskingSerializerSampleTest {
     fun `maskFailsClosedWithoutPrincipal sample compiles and runs`() {
         maskFailsClosedWithoutPrincipal()
     }
+
+    @Test
+    fun `failClosedOnResolverError sample compiles and runs`() {
+        failClosedOnResolverError()
+    }
 }
