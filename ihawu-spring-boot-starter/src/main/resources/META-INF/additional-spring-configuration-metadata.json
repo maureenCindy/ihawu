@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "ihawu.enabled",
+      "defaultValue": true
+    }
+  ]
+}
