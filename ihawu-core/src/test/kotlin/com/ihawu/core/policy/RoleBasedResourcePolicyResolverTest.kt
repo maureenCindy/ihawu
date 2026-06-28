@@ -264,4 +264,54 @@ class RoleBasedResourcePolicyResolverTest {
             RoleBasedResourcePolicyResolver.fromJson("""{ "employee": { "admin": "nope" } }""")
         }
     }
+
+    @Test
+    fun `fromJson throws when a field policy's field is not textual`() {
+        val config =
+            """
+            { "employee": { "admin": [ { "field": 123, "strategy": "HIDE" } ] } }
+            """.trimIndent()
+
+        val exception = assertFailsWith<IhawuCoreException> { RoleBasedResourcePolicyResolver.fromJson(config) }
+        assertTrue(exception.message.contains("textual 'field'"))
+    }
+
+    @Test
+    fun `fromJson throws when a field policy is missing its strategy`() {
+        val config =
+            """
+            { "employee": { "admin": [ { "field": "salary" } ] } }
+            """.trimIndent()
+
+        val exception = assertFailsWith<IhawuCoreException> { RoleBasedResourcePolicyResolver.fromJson(config) }
+        assertTrue(exception.message.contains("missing a textual 'strategy'"))
+    }
+
+    @Test
+    fun `fromJson throws when a field policy's strategy is not textual`() {
+        val config =
+            """
+            { "employee": { "admin": [ { "field": "salary", "strategy": 5 } ] } }
+            """.trimIndent()
+
+        val exception = assertFailsWith<IhawuCoreException> { RoleBasedResourcePolicyResolver.fromJson(config) }
+        assertTrue(exception.message.contains("missing a textual 'strategy'"))
+    }
+
+    @Test
+    fun `fromJson ignores a non-textual placeholder`() {
+        val config =
+            """
+            { "employee": { "admin": [ { "field": "salary", "strategy": "REDACT", "placeholder": 123 } ] } }
+            """.trimIndent()
+
+        val resolver = RoleBasedResourcePolicyResolver.fromJson(config)
+        val principal = IhawuPrincipal("user01", setOf("admin"), emptyMap())
+
+        // A non-textual placeholder is ignored (treated as absent), not an error.
+        assertEquals(
+            listOf(FieldPolicy("salary", MaskingStrategy.REDACT, null)),
+            resolver.resolve(principal, "employee"),
+        )
+    }
 }
