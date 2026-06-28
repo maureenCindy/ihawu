@@ -33,6 +33,9 @@ kapt {
 }
 
 dependencies {
+    compileOnly("org.springframework.security:spring-security-core")
+    compileOnly("org.springframework.boot:spring-boot-starter-web")
+
     implementation(project(":ihawu-core"))
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter")
@@ -40,7 +43,10 @@ dependencies {
     kapt("org.springframework.boot:spring-boot-configuration-processor")
     kapt("org.springframework.boot:spring-boot-autoconfigure-processor")
 
+    testImplementation("org.springframework.security:spring-security-core")
+    testImplementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
