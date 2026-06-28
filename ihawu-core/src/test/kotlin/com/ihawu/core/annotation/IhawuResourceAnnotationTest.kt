@@ -1,6 +1,5 @@
-package com.ihawu.core
+package com.ihawu.core.annotation
 
-import com.ihawu.core.annotation.IhawuResource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
