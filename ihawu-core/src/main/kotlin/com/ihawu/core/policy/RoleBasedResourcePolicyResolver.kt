@@ -91,6 +91,9 @@ class RoleBasedResourcePolicyResolver(
 
         private inline fun readTree(read: () -> JsonNode?): JsonNode =
             try {
+                // Defensive: current Jackson returns a MissingNode (caught by the isObject check
+                // in fromTree), not null, for empty input — so this guards a contract that could
+                // change rather than a path reachable today.
                 read() ?: throw IhawuCoreException("Policy configuration is empty")
             } catch (e: IhawuCoreException) {
                 throw e
