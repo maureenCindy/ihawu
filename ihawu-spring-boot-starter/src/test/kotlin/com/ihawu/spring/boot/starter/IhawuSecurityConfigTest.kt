@@ -1,7 +1,7 @@
 package com.ihawu.spring.boot.starter
 
 import com.ihawu.core.policy.IhawuPrincipal
-import com.ihawu.spring.boot.starter.security.IhawuRequestFilter
+import com.ihawu.spring.boot.starter.security.IhawuPrincipalFilter
 import com.ihawu.spring.boot.starter.security.PrincipalResolver
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.autoconfigure.AutoConfigurations
@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.security.core.Authentication
 import kotlin.test.Test
 
-class IhawuSecurityConfigurationTest {
+class IhawuSecurityConfigTest {
     private val runner =
         ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(IhawuAutoConfiguration::class.java))
@@ -19,7 +19,7 @@ class IhawuSecurityConfigurationTest {
     fun `registers the principal resolver and request filter when Spring Security is present`() {
         runner.run { context ->
             assertThat(context).hasSingleBean(PrincipalResolver::class.java)
-            assertThat(context).hasSingleBean(IhawuRequestFilter::class.java)
+            assertThat(context).hasSingleBean(IhawuPrincipalFilter::class.java)
         }
     }
 
@@ -30,7 +30,7 @@ class IhawuSecurityConfigurationTest {
             .run { context ->
                 assertThat(context).hasNotFailed() // the starter still loads without Spring Security
                 assertThat(context).doesNotHaveBean(PrincipalResolver::class.java)
-                assertThat(context).doesNotHaveBean(IhawuRequestFilter::class.java)
+                assertThat(context).doesNotHaveBean(IhawuPrincipalFilter::class.java)
             }
     }
 

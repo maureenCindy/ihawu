@@ -7,7 +7,17 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.filter.OncePerRequestFilter
 
-class IhawuRequestFilter(
+/**
+ * Captures the authenticated identity once per request and exposes it for the serialization bridge.
+ *
+ * Resolves the current Spring Security `Authentication` to an [com.ihawu.core.policy.IhawuPrincipal]
+ * via [principalResolver] and stores it as a request attribute under [IhawuSerialization.PRINCIPAL],
+ * where [com.ihawu.spring.boot.starter.interceptor.IhawuRequestContext] reads it at write time.
+ * Unauthenticated requests carry a `null` principal, so masking fails closed.
+ *
+ * @property principalResolver maps the `Authentication` to an [com.ihawu.core.policy.IhawuPrincipal].
+ */
+class IhawuPrincipalFilter(
     private val principalResolver: PrincipalResolver,
 ) : OncePerRequestFilter() {
     override fun doFilterInternal(
