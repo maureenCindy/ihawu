@@ -24,7 +24,7 @@ import org.springframework.web.context.WebApplicationContext
 class ResourcePolicyConfig {
     @Bean
     @ConditionalOnMissingBean
-    fun resourcePolicyProvider(): ResourcePolicyProvider = ResourcePolicyProvider { emptyList() }
+    fun resourcePolicyProvider(properties: IhawuProperties): ResourcePolicyProvider = ConfigResourcePolicyProvider(properties.policies)
 
     /**
      * The default [ResourcePolicyResolver]: a [RoleBasedResourcePolicyResolver] over the rules from

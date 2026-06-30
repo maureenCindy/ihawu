@@ -1,7 +1,7 @@
-package com.ihawu.spring.boot.starter.autoconfig
+package com.ihawu.spring.boot.starter.autoconfiguration
 
 import com.ihawu.spring.boot.starter.IhawuAutoConfiguration
-import com.ihawu.spring.boot.starter.IhawuProperties
+import com.ihawu.spring.boot.starter.configuration.IhawuProperties
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner

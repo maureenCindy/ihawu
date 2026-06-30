@@ -1,6 +1,5 @@
-package com.ihawu.spring.boot.starter
+package com.ihawu.spring.boot.starter.security
 
-import com.ihawu.spring.boot.starter.security.IhawuPrincipalResolver
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority

@@ -1,4 +1,4 @@
-package com.ihawu.spring.boot.starter.autoconfig
+package com.ihawu.spring.boot.starter.autoconfiguration
 
 import com.ihawu.core.policy.IhawuPrincipal
 import com.ihawu.spring.boot.starter.configuration.IhawuSecurityConfig

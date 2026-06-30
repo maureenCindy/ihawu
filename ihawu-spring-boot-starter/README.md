@@ -5,9 +5,10 @@ Point** that masks restricted fields at the serialization boundary, failing clos
 Add the starter to the classpath and Ihawu configures itself into your application; there is no
 manual `ObjectMapper` or interceptor wiring to do.
 
-> **Status — under active development.** This release establishes the auto-configuration foundation
-> and the typed `ihawu.*` properties. Bean wiring (identity bridge, serializer/interceptor
-> registration, policy-resolver and cache binding) lands in subsequent releases.
+> **Status — under active development.** The starter provides auto-configuration, the Spring Security
+> identity bridge, Jackson serializer/interceptor registration, request-scoped policy caching, and
+> static policy configuration via `ihawu.policies`. Dynamic policy sources and richer configuration
+> land in subsequent releases.
 
 ---
 
@@ -63,12 +64,52 @@ auto-completion via the Spring configuration metadata.
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | `ihawu.enabled` | `Boolean` | `true` | Master switch for the Ihawu integration. When `false`, the auto-configuration backs off entirely. |
+| `ihawu.policies` | `List` | `[]` | Static masking rules: per resource, the field policies to apply for each role. Empty means nothing is masked. |
 
 **`application.yml`**
 ```yaml
 ihawu:
   enabled: true
 ```
+
+---
+
+## Static masking rules (`ihawu.policies`)
+
+For simple, fixed rule sets you can declare masking policies directly in configuration — no code. Each
+entry maps a **resource** (the `@IhawuResource` name) to the **field policies** applied for each
+**role** the caller holds:
+
+```yaml
+ihawu:
+  policies:
+    - resource: employee            # matches @IhawuResource("employee")
+      roles:
+        ADMIN:
+          - field: ssn
+            strategy: REDACT        # replace the value…
+            placeholder: "***-**-****"   # …with this (optional; omit to use the strategy default)
+          - field: salary
+            strategy: HIDE          # remove the field entirely
+```
+
+- **`strategy`** is `HIDE` (drops the field) or `REDACT` (replaces its value). Omitting it defaults to
+  the stricter `HIDE`.
+- **`placeholder`** applies only to `REDACT`; when omitted, the strategy's own default value is used.
+- Policies **union across the caller's roles**; when two roles mask the same field, the stricter
+  strategy wins.
+- A field with **no matching rule stays visible** — masking is a denylist, so unconfigured fields are
+  public by design. (Missing *identity* still fails closed; see the [ADRs](../docs/adr).)
+
+Configuration is validated **eagerly at startup**: duplicate `resource` keys and blank `field` names
+fail the application context rather than silently mis-masking at request time.
+
+### Dynamic rules
+
+`ihawu.policies` is the zero-code default. For rules that come from a database, OPA, or a per-tenant
+service, supply your own `ResourcePolicyProvider` (static rules) or `ResourcePolicyResolver` (full
+control) bean — it overrides the config-backed default via `@ConditionalOnMissingBean`. See
+[ADR 0004](../docs/adr/0004-static-policy-configuration.md).
 
 ---
 
