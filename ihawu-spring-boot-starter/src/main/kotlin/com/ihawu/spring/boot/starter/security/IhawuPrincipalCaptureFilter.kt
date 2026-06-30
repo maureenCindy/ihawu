@@ -17,7 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter
  *
  * @property principalResolver maps the `Authentication` to an [com.ihawu.core.policy.IhawuPrincipal].
  */
-class IhawuPrincipalFilter(
+class IhawuPrincipalCaptureFilter(
     private val principalResolver: PrincipalResolver,
 ) : OncePerRequestFilter() {
     override fun doFilterInternal(

@@ -7,7 +7,7 @@ import org.springframework.web.context.request.ServletRequestAttributes
 
 /**
  * Reads the current request's [IhawuPrincipal], bridging the servlet request attribute set by
- * [com.ihawu.spring.boot.starter.security.IhawuPrincipalFilter] to the serialization layer.
+ * [com.ihawu.spring.boot.starter.security.IhawuPrincipalCaptureFilter] to the serialization layer.
  *
  * The principal is fetched from the active request via `RequestContextHolder`, so it works from
  * `customizeWriter` (which has no request parameter). Returns `null` off a request thread, or when no

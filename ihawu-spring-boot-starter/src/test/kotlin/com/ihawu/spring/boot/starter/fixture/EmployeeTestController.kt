@@ -26,4 +26,8 @@ class EmployeeTestController {
 
     @GetMapping("/public/employee")
     fun getPublicEmployee(): TestEmployee = testEmployee
+
+    /** Returns many employees of the same resource type, to exercise per-request policy caching. */
+    @GetMapping("/employees")
+    fun getEmployees(): List<TestEmployee> = List(5) { testEmployee.copy(contacts = emptyList()) }
 }
