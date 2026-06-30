@@ -24,31 +24,30 @@ class MaskingSampleWebApp {
 
     @Bean
     fun resourcePolicyProvider(): ResourcePolicyProvider =
-        object : ResourcePolicyProvider {
-            override fun getResourcePolicies(): List<ResourcePolicy> =
-                listOf(
-                    ResourcePolicy(
-                        resourceName = "employee",
-                        roleFieldPolicies =
-                            mapOf(
-                                "ADMIN" to
-                                    listOf(
-                                        FieldPolicy("salary", MaskingStrategy.HIDE),
-                                        FieldPolicy("ssn", MaskingStrategy.REDACT, "***ssn"),
-                                    ),
-                            ),
-                    ),
-                    ResourcePolicy(
-                        resourceName = "contact",
-                        roleFieldPolicies =
-                            mapOf(
-                                "ADMIN" to
-                                    listOf(
-                                        FieldPolicy("homeAddress", MaskingStrategy.HIDE),
-                                        FieldPolicy("phone", MaskingStrategy.REDACT, "+263***"),
-                                    ),
-                            ),
-                    ),
-                )
+        ResourcePolicyProvider {
+            listOf(
+                ResourcePolicy(
+                    resourceName = "employee",
+                    roleFieldPolicies =
+                        mapOf(
+                            "ADMIN" to
+                                listOf(
+                                    FieldPolicy("salary", MaskingStrategy.HIDE),
+                                    FieldPolicy("ssn", MaskingStrategy.REDACT, "***ssn"),
+                                ),
+                        ),
+                ),
+                ResourcePolicy(
+                    resourceName = "contact",
+                    roleFieldPolicies =
+                        mapOf(
+                            "ADMIN" to
+                                listOf(
+                                    FieldPolicy("homeAddress", MaskingStrategy.HIDE),
+                                    FieldPolicy("phone", MaskingStrategy.REDACT, "+263***"),
+                                ),
+                        ),
+                ),
+            )
         }
 }
