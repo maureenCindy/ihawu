@@ -1,6 +1,9 @@
 package com.ihawu.spring.boot.starter
 
-import com.ihawu.spring.boot.starter.security.IhawuSecurityConfiguration
+import com.ihawu.spring.boot.starter.configuration.IhawuJacksonObjectMapperConfig
+import com.ihawu.spring.boot.starter.configuration.IhawuSecurityConfig
+import com.ihawu.spring.boot.starter.configuration.IhawuWebConfig
+import com.ihawu.spring.boot.starter.configuration.ResourcePolicyConfig
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -13,7 +16,14 @@ import org.springframework.context.annotation.Import
  *
  */
 @AutoConfiguration
-@Import(IhawuSecurityConfiguration::class)
+@Import(
+    value = [
+        IhawuSecurityConfig::class,
+        IhawuJacksonObjectMapperConfig::class,
+        IhawuWebConfig::class,
+        ResourcePolicyConfig::class,
+    ],
+)
 @EnableConfigurationProperties(IhawuProperties::class)
 @ConditionalOnProperty(prefix = "ihawu", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class IhawuAutoConfiguration
