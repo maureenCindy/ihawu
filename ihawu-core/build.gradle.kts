@@ -10,7 +10,7 @@ dependencies {
     api("org.slf4j:slf4j-api:2.0.18")
     testImplementation(kotlin("test"))
     // No logging binding dependency: test sources provide an in-memory SLF4JServiceProvider
-    // (com.ihawu.core.common.RecordingServiceProvider) so log assertions need no extra library.
+    // (org.ihawu.core.common.RecordingServiceProvider) so log assertions need no extra library.
 }
 
 kotlin {

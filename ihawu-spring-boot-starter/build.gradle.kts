@@ -65,7 +65,7 @@ tasks.named<Jar>("jar") {
     archiveBaseName.set("ihawu-spring-boot-starter")
     manifest {
         // For Java 9+ module path compatibility
-        attributes["Automatic-Module-Name"] = "com.ihawu.spring.boot.starter"
+        attributes["Automatic-Module-Name"] = "org.ihawu.spring.boot.starter"
     }
 }
 
