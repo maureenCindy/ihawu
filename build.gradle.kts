@@ -7,7 +7,7 @@ plugins {
 }
 
 allprojects {
-    group = "com.ihawu"
+    group = "org.ihawu"
 
     val gitTag: String? = System.getenv("GITHUB_REF_NAME")
     val isRelease = System.getenv("GITHUB_REF_TYPE") == "tag" && gitTag != null && gitTag.startsWith("v")
