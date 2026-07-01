@@ -1,6 +1,7 @@
 package com.ihawu.spring.boot.starter
 
 import com.ihawu.spring.boot.starter.configuration.IhawuJacksonObjectMapperConfig
+import com.ihawu.spring.boot.starter.configuration.IhawuProperties
 import com.ihawu.spring.boot.starter.configuration.IhawuSecurityConfig
 import com.ihawu.spring.boot.starter.configuration.IhawuWebConfig
 import com.ihawu.spring.boot.starter.configuration.ResourcePolicyConfig
@@ -11,7 +12,7 @@ import org.springframework.context.annotation.Import
 
 /**
  * Autoconfiguration entry point for the Ihawu starter.
- * Registers [IhawuProperties] and contributes Ihawu's beans, backing off when `ihawu.enabled=false`.
+ * Registers [com.ihawu.spring.boot.starter.configuration.IhawuProperties] and contributes Ihawu's beans, backing off when `ihawu.enabled=false`.
  * Each bean is guarded so applications can override it.
  *
  */
