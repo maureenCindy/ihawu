@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: ihawu-spring-boot-sample
+  profiles:
+    # Which policy source the sample uses. Override on the CLI, e.g.
+    #   --spring.profiles.active=config
+    active: provider

@@ -28,7 +28,8 @@ subprojects {
         }
     }
 
-    if (subproject.name != "samples") {
+    // Only the published library modules (ihawu-*) get Maven publishing/signing; samples never do.
+    if (subproject.name.startsWith("ihawu-")) {
         pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
             pluginManager.apply("maven-publish")
             pluginManager.apply("signing")
@@ -108,7 +109,7 @@ subprojects {
         plugins.withType<org.jetbrains.dokka.gradle.DokkaPlugin> {
             tasks.withType<org.jetbrains.dokka.gradle.AbstractDokkaLeafTask>().configureEach {
                 dokkaSourceSets.configureEach {
-                    samples.from(project(":samples").file("src/main/kotlin"))
+                    samples.from(project(":samples:snippets").file("src/main/kotlin"))
                 }
             }
         }
