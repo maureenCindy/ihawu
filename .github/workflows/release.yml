@@ -1,4 +1,4 @@
-name: "Publish Production Release & Docs"
+name: "Publish Production Release"
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   # Verify the build before publishing — prevents shipping broken releases
@@ -17,6 +17,7 @@ jobs:
   publish-artifacts:
     runs-on: ubuntu-latest
     needs: verify
+    environment: maven-central
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v7
@@ -35,45 +36,12 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
 
-      - name: Release Binaries to Sonatype Central
-        run: ./gradlew publishAllPublicationsToSonatypeRepository --no-daemon
+      - name: Publish to Maven Central
+        # First release: uploads + validates, then stops at "pending" for a manual Release in the
+        # Central Portal UI. Switch to publishAndReleaseToMavenCentral to auto-release once trusted.
+        run: ./gradlew publishToMavenCentral --no-configuration-cache --no-daemon
         env:
-          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_USERNAME }}
-          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_PASSWORD }}
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-
-  # Compile executable samples and deploy the stable HTML site to GitHub Pages
-  publish-documentation:
-    runs-on: ubuntu-latest
-    needs: publish-artifacts
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v7
-
-      - name: Setup Java Toolchain
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
-      - name: Cache Gradle Packages
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
-
-      - name: Compile Executable Documentation HTML
-        run: ./gradlew dokkaHtmlMultiModule --no-daemon
-
-      - name: Deploy Stable Release Documentation
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/dokka/htmlMultiModule
-          publish_branch: gh-pages
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: "docs: publish documentation for release ${{ github.ref_name }} [skip ci]"
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
