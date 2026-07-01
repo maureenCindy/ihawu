@@ -23,7 +23,10 @@ subprojects {
 
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
         pluginManager.apply("org.jlleitschuh.gradle.ktlint")
-        if (subproject.name != "ihawu-spring-boot-starter") {
+        // Dokka 1.9.20 embeds an older Jackson that clashes with Spring Boot's, so it crashes on any
+        // module with Spring on the classpath. Skip those (the starter and the sample app); the pure
+        // library and snippets still generate API docs.
+        if (subproject.name != "ihawu-spring-boot-starter" && subproject.name != "spring-boot-sample") {
             pluginManager.apply("org.jetbrains.dokka")
         }
     }
