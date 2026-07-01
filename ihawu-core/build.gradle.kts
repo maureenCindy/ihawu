@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-    api("com.fasterxml.jackson.core:jackson-databind:2.21.1")
+    api("com.fasterxml.jackson.core:jackson-databind:2.22.0")
     api("org.slf4j:slf4j-api:2.0.18")
     testImplementation(kotlin("test"))
     // No logging binding dependency: test sources provide an in-memory SLF4JServiceProvider
