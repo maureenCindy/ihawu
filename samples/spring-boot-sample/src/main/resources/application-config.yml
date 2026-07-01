@@ -1,0 +1,18 @@
+# Policy source for the `config` profile: the same rules as PolicyConfig, but declared as
+# configuration and enforced by the starter's default (config-backed) ResourcePolicyProvider.
+# HR_ADMIN has no rules and therefore sees the full record (fail-open on missing policy).
+ihawu:
+  policies:
+    - resource: employee
+      roles:
+        MANAGER:
+          - field: socialSecurityNumber
+            strategy: REDACT
+            placeholder: "***-**-****"
+        EMPLOYEE:
+          - field: salary
+            strategy: HIDE
+          - field: socialSecurityNumber
+            strategy: HIDE
+          - field: performanceNotes
+            strategy: HIDE

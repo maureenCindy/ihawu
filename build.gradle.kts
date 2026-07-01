@@ -23,12 +23,16 @@ subprojects {
 
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
         pluginManager.apply("org.jlleitschuh.gradle.ktlint")
-        if (subproject.name != "ihawu-spring-boot-starter") {
+        // Dokka 1.9.20 embeds an older Jackson that clashes with Spring Boot's, so it crashes on any
+        // module with Spring on the classpath. Skip those (the starter and the sample app); the pure
+        // library and snippets still generate API docs.
+        if (subproject.name != "ihawu-spring-boot-starter" && subproject.name != "spring-boot-sample") {
             pluginManager.apply("org.jetbrains.dokka")
         }
     }
 
-    if (subproject.name != "samples") {
+    // Only the published library modules (ihawu-*) get Maven publishing/signing; samples never do.
+    if (subproject.name.startsWith("ihawu-")) {
         pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
             pluginManager.apply("maven-publish")
             pluginManager.apply("signing")
@@ -108,7 +112,7 @@ subprojects {
         plugins.withType<org.jetbrains.dokka.gradle.DokkaPlugin> {
             tasks.withType<org.jetbrains.dokka.gradle.AbstractDokkaLeafTask>().configureEach {
                 dokkaSourceSets.configureEach {
-                    samples.from(project(":samples").file("src/main/kotlin"))
+                    samples.from(project(":samples:snippets").file("src/main/kotlin"))
                 }
             }
         }

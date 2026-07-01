@@ -2,6 +2,7 @@ plugins {
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.spring")
+    `java-library`
     id("org.springframework.boot") version "3.5.16"
     id("io.spring.dependency-management") version "1.1.7"
 }
@@ -36,7 +37,9 @@ dependencies {
     compileOnly("org.springframework.security:spring-security-core")
     compileOnly("org.springframework.boot:spring-boot-starter-web")
 
-    implementation(project(":ihawu-core"))
+    // api, not implementation: core types (@IhawuResource, FieldPolicy, MaskingStrategy) are part of
+    // the starter's public surface, so consumers compile against them with only the starter on the path.
+    api(project(":ihawu-core"))
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter")
 
