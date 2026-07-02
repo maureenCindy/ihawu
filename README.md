@@ -60,7 +60,29 @@ than slow runtime reflection loops on hot request paths, introducing a negligibl
 
 ## Installation
 
-Coming soon....
+Add the Spring Boot starter — it pulls `ihawu-core` transitively, so it's the only dependency you add.
+
+**Gradle (Kotlin DSL)**
+```kotlin
+implementation("org.ihawu:ihawu-spring-boot-starter:0.1.0")
+```
+
+**Gradle (Groovy DSL)**
+```groovy
+implementation "org.ihawu:ihawu-spring-boot-starter:0.1.0"
+```
+
+**Maven**
+```xml
+<dependency>
+    <groupId>org.ihawu</groupId>
+    <artifactId>ihawu-spring-boot-starter</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+Not on Spring? Depend on `org.ihawu:ihawu-core:0.1.0` directly and drive masking through a
+`ResourcePolicyResolver`. Full guides at [docs.ihawu.org](https://docs.ihawu.org).
 
 ---
 
