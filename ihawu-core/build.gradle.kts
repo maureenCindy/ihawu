@@ -1,8 +1,11 @@
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinJvm
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 
 plugins {
     kotlin("jvm")
     id("org.jetbrains.kotlinx.kover")
+    id("com.vanniktech.maven.publish")
 }
 
 dependencies {
@@ -11,6 +14,19 @@ dependencies {
     testImplementation(kotlin("test"))
     // No logging binding dependency: test sources provide an in-memory SLF4JServiceProvider
     // (org.ihawu.core.common.RecordingServiceProvider) so log assertions need no extra library.
+}
+
+mavenPublishing {
+    configure(
+        KotlinJvm(
+            javadocJar = JavadocJar.Dokka("dokkaHtml"),
+            sourcesJar = true,
+        ),
+    )
+}
+
+tasks.named<Jar>("jar") {
+    manifest { attributes["Automatic-Module-Name"] = "org.ihawu.core" }
 }
 
 kotlin {
