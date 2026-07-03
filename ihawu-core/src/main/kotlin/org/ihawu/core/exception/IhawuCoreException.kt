@@ -10,9 +10,6 @@ package org.ihawu.core.exception
  *
  * @property message A human-readable description of what went wrong.
  * @property cause The underlying exception that triggered this error, if any.
- *
- * @sample org.ihawu.samples.exception.throwWithMessage
- * @sample org.ihawu.samples.exception.throwWithCause
  */
 class IhawuCoreException(
     override val message: String,

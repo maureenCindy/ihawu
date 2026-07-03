@@ -5,7 +5,6 @@ package org.ihawu.core.annotation
  * resolved for [name].
  *
  * @property name The resource key the PolicyResolver resolves field policies against.
- * @sample org.ihawu.samples.annotation.annotatedEmployeeProfile
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)

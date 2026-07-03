@@ -13,9 +13,6 @@ package org.ihawu.core.masking
  * @property defaultValue An optional factory that produces the replacement value
  *   written to the output stream. Returns `null` for strategies that remove the
  *   field entirely rather than substituting a placeholder.
- *
- * @sample org.ihawu.samples.masking.hideRemovesField
- * @sample org.ihawu.samples.masking.redactReplacesValue
  */
 enum class MaskingStrategy(
     val description: String,
