@@ -1,6 +1,6 @@
 # Ihawu
 Ihawu is a unified, cross-framework policy enforcement and dynamic data-masking engine built in **Kotlin (JVM)** with
-first-class support for **Spring Boot** and **Ktor**. 
+first-class support for **Spring Boot** (with **Ktor** support planned). 
 
 ---
 
@@ -26,20 +26,20 @@ transparently at the serialization boundary.
 Ihawu operates as an automated, stateless data filter embedded natively inside your web application's ingress and 
 egress lifecycles:
 1. Ingress HTTP Request ────► Framework validates OAuth2 JWT (Keycloak)
-2. Ihawu Adapter    ──► Maps raw claims into IamPrincipal
+2. Ihawu Adapter    ──► Maps raw claims into IhawuPrincipal
 3. Policy Engine  ──► Fetches live rules (DB, Config, or OPA)
 4. Controller Logic Runs ──► Returns raw, complete Database Entity class 
-5. Ihawu Masker    ──► Intercepts Jackson / kotlinx.serialization
+5. Ihawu Masker    ──► Intercepts Jackson (kotlinx.serialization planned)
 6. Outbound JSON Stream ──► Transparently stripped (HIDE) or obfuscated (REDACT)
 
 ### Guiding principles
-1. **Ingress Capture:** Your host framework (Spring Boot or Ktor) handles the network cryptography and token 
+1. **Ingress Capture:** Your host framework (Spring Boot today; Ktor planned) handles the network cryptography and token 
 verification. Ihawu instantly captures that verified identity and converts it into a uniform, framework-neutral 
-`IamPrincipal`.
+`IhawuPrincipal`.
 2. **Stateless Processing:** Your business controller runs completely unpolluted, querying your application database
 and returning its raw, strongly-typed domain entity exactly as it is.
 3. **Transparent Egress Masking:** Right before that object is written to the network pipe as a JSON string, 
-Ihawu intercepts the serialization engine (Jackson or `kotlinx.serialization`). It references your active policy matrix
+Ihawu intercepts the serialization engine (Jackson today; `kotlinx.serialization` planned). It references your active policy matrix
 and dynamically drops (`HIDE`) or overwrites (`REDACT`) restricted fields on the fly.
 
 ---

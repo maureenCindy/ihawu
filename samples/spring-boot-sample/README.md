@@ -117,7 +117,8 @@ callers.
 
 ## Run the tests
 
-`EmployeeMaskingTest` pins the per-role masked JSON with MockMvc:
+`ProviderProfileMaskingTest` and `ConfigProfileMaskingTest` pin the per-role masked JSON with MockMvc,
+sharing their assertions via `AbstractEmployeeMaskingTest` so both policy sources are proven equivalent:
 
 ```bash
 ./gradlew :samples:spring-boot-sample:test
