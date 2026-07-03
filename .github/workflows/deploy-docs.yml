@@ -29,6 +29,18 @@ jobs:
       - name: Generate aggregated API docs
         run: ./gradlew dokkaGenerate --no-daemon
 
+      # Dokka does not content-hash its asset filenames, so scripts/main.js, styles/*.css, the
+      # search index, navigation.html and the logo keep the same names but change contents across
+      # deploys. Without this, a browser serves a previous deploy's cached file against new HTML —
+      # which breaks the theme and menu toggles and shows a stale logo. Tell Cloudflare Pages to
+      # revalidate everything (cheap ETag 304s) so new deploys are always picked up.
+      - name: Add Cloudflare Pages cache headers
+        run: |
+          cat > build/dokka/html/_headers <<'EOF'
+          /*
+            Cache-Control: public, max-age=0, must-revalidate
+          EOF
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
