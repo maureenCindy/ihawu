@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "2.4.0" apply false
     kotlin("plugin.spring") version "2.4.0" apply false
-    id("org.jetbrains.dokka") version "1.9.20"
+    id("org.jetbrains.dokka") version "2.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0" apply false
     id("org.jetbrains.kotlinx.kover") version "0.9.8" apply false
     id("com.vanniktech.maven.publish") version "0.30.0" apply false
@@ -29,38 +29,36 @@ subprojects {
         //   - samples:snippets / spring-boot-sample — sample code, not a consumable library
         //     (snippets is still wired into ihawu-core's @sample resolution below, which needs
         //     only its source path, not the Dokka plugin).
-        //   - ihawu-spring-boot-starter — a real consumer module, but Dokka 1.9.20 embeds an older
-        //     Jackson that clashes with Spring Boot's and crashes on any Spring classpath. Add it
-        //     here once the Dokka 2.x upgrade (issue #51) removes that clash.
-        val apiReferenceModules = setOf("ihawu-core")
+        // The starter is documented too: Dokka 2.x isolates its own classpath in a worker, so the
+        // Jackson clash that blocked it under Dokka 1.9.x is gone. Its internal Spring wiring is
+        // marked `internal`, so the reference shows only the extension points and config surface.
+        val apiReferenceModules = setOf("ihawu-core", "ihawu-spring-boot-starter")
         if (subproject.name in apiReferenceModules) {
             pluginManager.apply("org.jetbrains.dokka")
         }
     }
 }
 
-// Dokka multi-module output directory
-tasks.withType<org.jetbrains.dokka.gradle.DokkaMultiModuleTask>().configureEach {
-    outputDirectory.set(layout.buildDirectory.dir("dokka/htmlMultiModule"))
-    // The aggregation writes into the output dir without wiping it first, and the root project has
-    // no base plugin so `./gradlew clean` never removes root `build/`. Together that lets a prior
-    // run's packages survive a rebuild (e.g. stale pre-migration com.ihawu.* alongside org.ihawu.*).
-    // Wipe the output ourselves so a local build can never publish stale API-reference pages.
-    doFirst { delete(outputDirectory) }
+// Dokka 2.x aggregates the multi-module HTML site from the modules declared as `dokka`
+// dependencies here; keep this list in sync with the allowlist above.
+dependencies {
+    dokka(project(":ihawu-core"))
+    dokka(project(":ihawu-spring-boot-starter"))
 }
 
-// Feed samples source into Dokka's @sample resolution for ihawu-core
+// Per-module Dokka configuration (only fires for allowlisted modules — the rest never apply the
+// plugin). Every documented module contributes its package-level doc (Dokka "Module and Package
+// documentation", dokka/module.md) framing extension points vs. provided implementations;
+// ihawu-core additionally feeds the snippets source into @sample resolution.
 subprojects {
-    if (name == "ihawu-core") {
-        // Package-level docs (Dokka "Module and Package documentation") that frame the policy
-        // package's contracts vs. provided implementations at the top of its reference page.
+    pluginManager.withPlugin("org.jetbrains.dokka") {
         val moduleDoc = file("dokka/module.md")
-        plugins.withType<org.jetbrains.dokka.gradle.DokkaPlugin> {
-            tasks.withType<org.jetbrains.dokka.gradle.AbstractDokkaLeafTask>().configureEach {
-                dokkaSourceSets.configureEach {
-                    samples.from(project(":samples:snippets").file("src/main/kotlin"))
-                    includes.from(moduleDoc)
-                }
+        val samplesDir = project(":samples:snippets").file("src/main/kotlin")
+        val isCore = name == "ihawu-core"
+        extensions.configure<org.jetbrains.dokka.gradle.DokkaExtension> {
+            dokkaSourceSets.named("main") {
+                if (moduleDoc.exists()) includes.from(moduleDoc)
+                if (isCore) samples.from(samplesDir)
             }
         }
     }

@@ -21,7 +21,7 @@ import org.springframework.web.context.WebApplicationContext
  * `@ConditionalOnMissingBean` so applications replace either the rules or the whole resolver.
  */
 @Configuration(proxyBeanMethods = false)
-class ResourcePolicyConfig {
+internal class ResourcePolicyConfig {
     @Bean
     @ConditionalOnMissingBean
     fun resourcePolicyProvider(properties: IhawuProperties): ResourcePolicyProvider = ConfigResourcePolicyProvider(properties.policies)

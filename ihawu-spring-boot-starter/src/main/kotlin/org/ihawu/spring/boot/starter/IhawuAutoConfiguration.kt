@@ -27,4 +27,4 @@ import org.springframework.context.annotation.Import
 )
 @EnableConfigurationProperties(IhawuProperties::class)
 @ConditionalOnProperty(prefix = "ihawu", name = ["enabled"], havingValue = "true", matchIfMissing = true)
-class IhawuAutoConfiguration
+internal class IhawuAutoConfiguration

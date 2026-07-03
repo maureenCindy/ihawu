@@ -21,7 +21,7 @@ import org.springframework.security.core.Authentication
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnClass(Authentication::class)
-class IhawuSecurityConfig {
+internal class IhawuSecurityConfig {
     /** Default mapping from Spring Security's `Authentication` to [org.ihawu.core.policy.IhawuPrincipal]. */
     @Bean
     @ConditionalOnMissingBean

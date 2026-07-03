@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration
  * [org.ihawu.spring.boot.starter.interceptor.IhawuJacksonHttpMessageConverter].
  */
 @Configuration(proxyBeanMethods = false)
-class IhawuJacksonObjectMapperConfig {
+internal class IhawuJacksonObjectMapperConfig {
     /** The core masking [IhawuModule], resolving field policies through the configured [resolver]. */
     @Bean
     @ConditionalOnMissingBean

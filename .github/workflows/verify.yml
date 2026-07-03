@@ -45,7 +45,7 @@ jobs:
         run: ./gradlew check --no-daemon
 
       - name: Validate Executable Documentation Samples
-        run: ./gradlew dokkaHtmlMultiModule --no-daemon
+        run: ./gradlew dokkaGenerate --no-daemon
 
       # Prove the PUBLISHED shape is consumable: publish the SNAPSHOT locally, then build the
       # standalone smoke test that depends only on org.ihawu:* from mavenLocal. Skipped on tags,

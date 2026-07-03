@@ -20,7 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(WebMvcConfigurer::class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-class IhawuWebConfig {
+internal class IhawuWebConfig {
     /**
      * Swaps the autoconfigured Jackson converter for [IhawuJacksonHttpMessageConverter], reusing its
      * `ObjectMapper`, so the per-request principal is attached at serialization time.
