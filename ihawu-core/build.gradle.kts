@@ -57,3 +57,15 @@ tasks.named("check") { dependsOn("koverVerify") }
 tasks.test {
     useJUnitPlatform()
 }
+
+// Feed the snippets source into @sample resolution. This MUST be configured in the module's own
+// build script: Dokka 2 silently drops `samples` set via the root `subprojects { }` block (unlike
+// `includes`, which propagates fine from there), so every @sample link renders as a raw path
+// instead of code. Configuring it here on the module makes all @sample links resolve.
+pluginManager.withPlugin("org.jetbrains.dokka") {
+    extensions.configure<org.jetbrains.dokka.gradle.DokkaExtension> {
+        dokkaSourceSets.named("main") {
+            samples.from(project(":samples:snippets").file("src/main/kotlin"))
+        }
+    }
+}

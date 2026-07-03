@@ -46,19 +46,42 @@ dependencies {
     dokka(project(":ihawu-spring-boot-starter"))
 }
 
+// Ihawu brand theming for the Dokka site (docs.ihawu.org), aligning it with ihawu.org: the shield
+// mark (a customAsset named logo-icon.svg replaces Dokka's default nav logo AND favicon), the indigo
+// accent palette, and a footer + homepage link back to the site. Applied to every documented module
+// AND the root aggregation, since Dokka 2 themes each independently.
+fun org.jetbrains.dokka.gradle.DokkaExtension.applyIhawuBranding(
+    logo: java.io.File,
+    stylesheet: java.io.File,
+) {
+    pluginsConfiguration.html {
+        customAssets.from(logo)
+        customStyleSheets.from(stylesheet)
+        footerMessage.set("© 2026 Ihawu · ihawu.org")
+        homepageLink.set("https://ihawu.org")
+    }
+}
+
+val brandingLogo = rootDir.resolve("dokka/branding/logo-icon.svg")
+val brandingStylesheet = rootDir.resolve("dokka/branding/ihawu.css")
+
+dokka {
+    moduleName.set("Ihawu")
+    applyIhawuBranding(brandingLogo, brandingStylesheet)
+}
+
 // Per-module Dokka configuration (only fires for allowlisted modules — the rest never apply the
 // plugin). Every documented module contributes its package-level doc (Dokka "Module and Package
-// documentation", dokka/module.md) framing extension points vs. provided implementations;
-// ihawu-core additionally feeds the snippets source into @sample resolution.
+// documentation", dokka/module.md) framing extension points vs. provided implementations, plus the
+// shared brand theming. (ihawu-core's @sample wiring lives in its own build script — Dokka 2 drops
+// `samples` configured from here.)
 subprojects {
     pluginManager.withPlugin("org.jetbrains.dokka") {
         val moduleDoc = file("dokka/module.md")
-        val samplesDir = project(":samples:snippets").file("src/main/kotlin")
-        val isCore = name == "ihawu-core"
         extensions.configure<org.jetbrains.dokka.gradle.DokkaExtension> {
+            applyIhawuBranding(brandingLogo, brandingStylesheet)
             dokkaSourceSets.named("main") {
                 if (moduleDoc.exists()) includes.from(moduleDoc)
-                if (isCore) samples.from(samplesDir)
             }
         }
     }
