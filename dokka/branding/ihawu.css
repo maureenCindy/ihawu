@@ -1,0 +1,33 @@
+/*
+ * Ihawu brand theming for the Dokka API reference.
+ *
+ * Aligns docs.ihawu.org with ihawu.org: the indigo accent palette (matched to the shield mark) and
+ * a logo box sized to the shield's aspect ratio. Loaded after Dokka's own stylesheets, so these
+ * declarations override Dokka's defaults. Only accent variables are touched — the header, search,
+ * and theme-toggle keep Dokka's neutral chrome (subtle-accents treatment).
+ *
+ * Palette mirrors ihawu-website/src/styles/custom.css. Light theme is :root; dark theme is
+ * .theme-dark. Indigo-700 (#4338CA) on light, indigo-600 (#4F46E5) on dark.
+ */
+
+:root {
+    /* Shield is 100x116 (taller than wide); size the logo box to its aspect ratio. */
+    --dokka-logo-height: 28px;
+    --dokka-logo-width: 24px;
+
+    /* Base link/accent + active navigation — light theme. */
+    --color-key-blue: #4338CA;
+    --active-tab-border-color: #4338CA;
+    --active-section-color: #4338CA;
+    --sidemenu-section-active-color: #4338CA;
+    --hover-link-color: #4F46E5;
+}
+
+.theme-dark {
+    /* Base link/accent + active navigation — dark theme. */
+    --color-key-blue: #4F46E5;
+    --active-tab-border-color: #4F46E5;
+    --active-section-color: #4F46E5;
+    --sidemenu-section-active-color: #4F46E5;
+    --hover-link-color: #6366F1;
+}

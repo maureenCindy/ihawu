@@ -27,11 +27,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Generate aggregated API docs
-        run: ./gradlew dokkaHtmlMultiModule --no-daemon
+        run: ./gradlew dokkaGenerate --no-daemon
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy build/dokka/htmlMultiModule --project-name=ihawu-docs
+          command: pages deploy build/dokka/html --project-name=ihawu-docs

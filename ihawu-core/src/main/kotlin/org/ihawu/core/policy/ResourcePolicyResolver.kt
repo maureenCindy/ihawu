@@ -6,6 +6,12 @@ package org.ihawu.core.policy
  * This is Ihawu's integration point with external policy engines (e.g. config, database, OPA, Casbin).
  * Ihawu stays a Policy Enforcement Point, it enforces the returned [FieldPolicy] list and never evaluates policy
  * conditions itself.
+ *
+ * Before writing your own, consider the batteries-included implementations: [RoleBasedResourcePolicyResolver]
+ * for static config-driven rules, and [CachingResourcePolicyResolver] to memoize any resolver.
+ *
+ * @see RoleBasedResourcePolicyResolver
+ * @see CachingResourcePolicyResolver
  */
 interface ResourcePolicyResolver {
     /**

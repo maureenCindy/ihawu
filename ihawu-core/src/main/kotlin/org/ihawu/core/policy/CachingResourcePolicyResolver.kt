@@ -20,8 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * Memoization uses [ConcurrentHashMap.computeIfAbsent], so the wrapped resolver is invoked at most
  * once per key even under concurrent serialization. The result is returned by reference and not
- * copied; callers must honour the read-only [List] contract and not mutate it. See
- * `docs/adr/0002-request-scoped-policy-caching.md`.
+ * copied; callers must honour the read-only [List] contract and not mutate it.
  *
  * @property delegate The resolver whose results are memoized (e.g. [RoleBasedResourcePolicyResolver]).
  * @sample org.ihawu.samples.policy.cacheResolvesOncePerScope

@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "2.4.0" apply false
     kotlin("plugin.spring") version "2.4.0" apply false
-    id("org.jetbrains.dokka") version "1.9.20"
+    id("org.jetbrains.dokka") version "2.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0" apply false
     id("org.jetbrains.kotlinx.kover") version "0.9.8" apply false
     id("com.vanniktech.maven.publish") version "0.30.0" apply false
@@ -24,28 +24,64 @@ subprojects {
 
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
         pluginManager.apply("org.jlleitschuh.gradle.ktlint")
-        // Dokka 1.9.20 embeds an older Jackson that clashes with Spring Boot's, so it crashes on any
-        // module with Spring on the classpath. Skip those (the starter and the sample app); the pure
-        // library and snippets still generate API docs.
-        if (subproject.name != "ihawu-spring-boot-starter" && subproject.name != "spring-boot-sample") {
+        // The API reference must only expose published, consumer-facing artifacts, so Dokka is
+        // applied to an explicit allowlist rather than every module. Excluded on purpose:
+        //   - samples:snippets / spring-boot-sample — sample code, not a consumable library
+        //     (snippets is still wired into ihawu-core's @sample resolution below, which needs
+        //     only its source path, not the Dokka plugin).
+        // The starter is documented too: Dokka 2.x isolates its own classpath in a worker, so the
+        // Jackson clash that blocked it under Dokka 1.9.x is gone. Its internal Spring wiring is
+        // marked `internal`, so the reference shows only the extension points and config surface.
+        val apiReferenceModules = setOf("ihawu-core", "ihawu-spring-boot-starter")
+        if (subproject.name in apiReferenceModules) {
             pluginManager.apply("org.jetbrains.dokka")
         }
     }
 }
 
-// Dokka multi-module output directory
-tasks.withType<org.jetbrains.dokka.gradle.DokkaMultiModuleTask>().configureEach {
-    outputDirectory.set(layout.buildDirectory.dir("dokka/htmlMultiModule"))
+// Dokka 2.x aggregates the multi-module HTML site from the modules declared as `dokka`
+// dependencies here; keep this list in sync with the allowlist above.
+dependencies {
+    dokka(project(":ihawu-core"))
+    dokka(project(":ihawu-spring-boot-starter"))
 }
 
-// Feed samples source into Dokka's @sample resolution for ihawu-core
+// Ihawu brand theming for the Dokka site (docs.ihawu.org), aligning it with ihawu.org: the shield
+// mark (a customAsset named logo-icon.svg replaces Dokka's default nav logo AND favicon), the indigo
+// accent palette, and a footer + homepage link back to the site. Applied to every documented module
+// AND the root aggregation, since Dokka 2 themes each independently.
+fun org.jetbrains.dokka.gradle.DokkaExtension.applyIhawuBranding(
+    logo: java.io.File,
+    stylesheet: java.io.File,
+) {
+    pluginsConfiguration.html {
+        customAssets.from(logo)
+        customStyleSheets.from(stylesheet)
+        footerMessage.set("© 2026 Ihawu · ihawu.org")
+        homepageLink.set("https://ihawu.org")
+    }
+}
+
+val brandingLogo = rootDir.resolve("dokka/branding/logo-icon.svg")
+val brandingStylesheet = rootDir.resolve("dokka/branding/ihawu.css")
+
+dokka {
+    moduleName.set("Ihawu")
+    applyIhawuBranding(brandingLogo, brandingStylesheet)
+}
+
+// Per-module Dokka configuration (only fires for allowlisted modules — the rest never apply the
+// plugin). Every documented module contributes its package-level doc (Dokka "Module and Package
+// documentation", dokka/module.md) framing extension points vs. provided implementations, plus the
+// shared brand theming. (ihawu-core's @sample wiring lives in its own build script — Dokka 2 drops
+// `samples` configured from here.)
 subprojects {
-    if (name == "ihawu-core") {
-        plugins.withType<org.jetbrains.dokka.gradle.DokkaPlugin> {
-            tasks.withType<org.jetbrains.dokka.gradle.AbstractDokkaLeafTask>().configureEach {
-                dokkaSourceSets.configureEach {
-                    samples.from(project(":samples:snippets").file("src/main/kotlin"))
-                }
+    pluginManager.withPlugin("org.jetbrains.dokka") {
+        val moduleDoc = file("dokka/module.md")
+        extensions.configure<org.jetbrains.dokka.gradle.DokkaExtension> {
+            applyIhawuBranding(brandingLogo, brandingStylesheet)
+            dokkaSourceSets.named("main") {
+                if (moduleDoc.exists()) includes.from(moduleDoc)
             }
         }
     }

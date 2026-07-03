@@ -18,7 +18,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
  *
  * @param objectMapper the application's configured mapper (already carrying [org.ihawu.core.serialization.IhawuModule]).
  */
-class IhawuJacksonHttpMessageConverter(
+internal class IhawuJacksonHttpMessageConverter(
     objectMapper: ObjectMapper,
 ) : MappingJackson2HttpMessageConverter(objectMapper) {
     override fun customizeWriter(

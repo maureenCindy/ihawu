@@ -13,7 +13,7 @@ import org.springframework.web.context.request.ServletRequestAttributes
  * `customizeWriter` (which has no request parameter). Returns `null` off a request thread, or when no
  * principal was attached — both of which make masking fail closed.
  */
-object IhawuRequestContext {
+internal object IhawuRequestContext {
     /** The [IhawuPrincipal] attached to the current request, or `null` if none / not on a request thread. */
     fun ihawuPrincipal(): IhawuPrincipal? =
         (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)

@@ -7,8 +7,7 @@ package org.ihawu.core.serialization
  * The host framework attaches the authenticated identity to a single serialization call via
  * `ObjectWriter.withAttribute`; the masking serializer reads it back through
  * `SerializerProvider.getAttribute`. Scoping the principal to one write call — rather than a
- * thread-bound holder — makes cross-request contamination structurally impossible. See
- * `docs/adr/0001-serialization-context-passing.md`.
+ * thread-bound holder — makes cross-request contamination structurally impossible.
  */
 object IhawuSerialization {
     /**
