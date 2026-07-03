@@ -12,7 +12,16 @@ allprojects {
 
     val gitTag: String? = System.getenv("GITHUB_REF_NAME")
     val isRelease = System.getenv("GITHUB_REF_TYPE") == "tag" && gitTag != null && gitTag.startsWith("v")
-    version = if (isRelease) gitTag.removePrefix("v") else "0.1.0-SNAPSHOT"
+    // The docs site deploys from a `main` push (a branch build), where the version would otherwise
+    // fall back to the SNAPSHOT default. deploy-docs.yml passes -PdocsVersion=<latest release tag>
+    // so docs.ihawu.org shows the released version (e.g. 0.1.0). Publishing is unaffected.
+    val docsVersion = findProperty("docsVersion") as String?
+    version =
+        if (isRelease) {
+            gitTag.removePrefix("v")
+        } else {
+            docsVersion?.takeIf { it.isNotBlank() } ?: "0.1.0-SNAPSHOT"
+        }
 
     repositories {
         mavenCentral()

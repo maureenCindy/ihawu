@@ -16,6 +16,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # Fetch tags so the docs can be labelled with the latest release version below.
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -26,8 +29,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # docs.ihawu.org deploys from main (a branch build), so the project version would be
+      # 0.1.0-SNAPSHOT. Label the site with the latest release tag instead, so it matches the
+      # published artifact. Falls back to the SNAPSHOT default when no v* tag exists yet.
       - name: Generate aggregated API docs
-        run: ./gradlew dokkaGenerate --no-daemon
+        run: |
+          VERSION="$(git tag --list 'v*' --sort=-v:refname | head -n1 | sed 's/^v//')"
+          echo "Documenting version: ${VERSION:-<snapshot fallback>}"
+          ./gradlew dokkaGenerate --no-daemon ${VERSION:+-PdocsVersion="$VERSION"}
 
       # Dokka does not content-hash its asset filenames, so scripts/main.js, styles/*.css, the
       # search index, navigation.html and the logo keep the same names but change contents across
