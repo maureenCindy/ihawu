@@ -56,12 +56,33 @@ and dynamically drops (`HIDE`) or overwrites (`REDACT`) restricted fields on the
 corporate-wide Rego files. Ihawu takes the identity your framework has already verified and the decisions your policy
 source returns, and handles the framework-specific task of enforcing them on the way out. It is a Policy Enforcement
 Point, not a second decision engine.
-* **Fail-Closed by Default:** Security boundaries must be unbreakable. If an authentication or rule validation lookup
-error occurs, Ihawu fails closed—returning an empty JSON block `{}` or dropping the response entirely rather than
-leaking unauthorized data.
+* **Fail-Closed by Default:** If no verified principal is attached, or a policy lookup fails, Ihawu masks every field
+of the resource rather than serializing it — you get an empty JSON block `{}`, not a leak. Forgetting to wire Ihawu up
+produces an empty object; with hand-rolled masking, forgetting produces a leak. The failure modes run in opposite
+directions.
 * **Reflective Safety without Performance Overhead:** Fields are evaluated using fast, cached property mappings rather
 than slow runtime reflection loops on hot request paths, introducing a negligible latency overhead of less than 
 50 microseconds per payload.
+
+---
+
+## What Ihawu Does Not Protect
+
+Ihawu enforces at **one** exit: an `ObjectMapper` with `IhawuModule` registered, serializing a call that has an
+`IhawuPrincipal` attached. Your object still travels through the application in full, and nothing masks it on any
+other path out of the process. It is **not** masked when it is written to a log, published to Kafka, written to a
+cache, exported to CSV, rendered into a server-side template, or serialized by a second `ObjectMapper` without the
+module registered.
+
+That is inherent to enforcing at the serialization boundary, and it is a deliberate trade — masking where the
+response is written is what lets your controllers return whole, truthful domain objects. But it means Ihawu masks
+**API responses**, not "sensitive data" in general. If an SSN must never appear in a log line, Ihawu is not what
+stops it.
+
+Treat Ihawu as last-mile, defense-in-depth enforcement, layered with controls that act closer to the data —
+column-level grants, row-level security, vendor dynamic masking — which are stronger wherever they apply, because
+the value never reaches your JVM at all. Full threat model:
+[What Ihawu does not protect](https://ihawu.org/concepts/how-it-works/#what-ihawu-does-not-protect).
 
 ---
 
