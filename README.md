@@ -67,6 +67,27 @@ on the serialization path. (No published benchmark yet — see #71.)
 
 ---
 
+## Why Not Just `@JsonView` or `@JsonFilter`?
+
+Fair question, and for a small enough problem the answer is: you should. Jackson ships both, and Ihawu is built
+**on** Jackson's serializer SPI rather than as an alternative to it.
+
+* **`@JsonView`** — if you have two or three fixed response shapes known at compile time, this is the right tool
+  and Ihawu is overkill. It cannot substitute a value, though, so a redacted `***-**-****` is not expressible.
+* **`@JsonFilter`** — dynamic, and much closer to what Ihawu does. Read honestly, `ihawu-core` is a policy-driven,
+  principal-aware `@JsonFilter` with the wiring and the policy model supplied for you.
+
+What you would build yourself to get there: a `PropertyFilter` subclass to substitute placeholders rather than
+merely drop fields; a `MappingJacksonValue` wrapper at every handler, where the one you forget is the one that
+leaks; policy plumbing to load rules from config, a database, or OPA; and manual assembly of the filter set for
+nested types and collections. Ihawu supplies those, registers once on the `ObjectMapper`, recurses automatically,
+and fails closed when identity is missing.
+
+Full comparison — including masking in the database, which is stronger than Ihawu wherever it applies:
+[Comparison](https://ihawu.org/concepts/comparison/).
+
+---
+
 ## What Ihawu Does Not Protect
 
 Ihawu enforces at **one** exit: an `ObjectMapper` with `IhawuModule` registered, serializing a call that has an
