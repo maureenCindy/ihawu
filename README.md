@@ -1,6 +1,7 @@
 # Ihawu
-Ihawu is a unified, cross-framework policy enforcement and dynamic data-masking engine built in **Kotlin (JVM)** with
-first-class support for **Spring Boot** (with **Ktor** support planned). 
+Ihawu is a policy enforcement and dynamic data-masking engine built in **Kotlin (JVM)**, with first-class support for
+**Spring Boot**. Ktor and Kotlin Multiplatform are design goals, not near-term releases — see
+[Roadmap](#roadmap) below. 
 
 ---
 
@@ -27,10 +28,16 @@ Ihawu operates as an automated, stateless data filter embedded natively inside y
 egress lifecycles:
 1. Ingress HTTP Request ────► Framework validates OAuth2 JWT (Keycloak)
 2. Ihawu Adapter    ──► Maps raw claims into IhawuPrincipal
-3. Policy Engine  ──► Fetches live rules (DB, Config, or OPA)
+3. ResourcePolicyResolver ──► Resolves this caller's field policies for the resource
 4. Controller Logic Runs ──► Returns raw, complete Database Entity class 
 5. Ihawu Masker    ──► Intercepts Jackson (kotlinx.serialization planned)
 6. Outbound JSON Stream ──► Transparently stripped (HIDE) or obfuscated (REDACT)
+
+Step 3 goes through the `ResourcePolicyResolver` SPI. Two implementations ship: `RoleBasedResourcePolicyResolver`
+for static role-based rules, and — on Spring Boot — `ConfigResourcePolicyProvider`, which binds rules straight
+from `ihawu.policies` configuration. Either can be wrapped in `CachingResourcePolicyResolver`. To source rules
+from somewhere else — a database, a per-tenant service, OPA — you implement the SPI; Ihawu does not ship those
+integrations.
 
 ### Guiding principles
 1. **Ingress Capture:** Your host framework (Spring Boot today; Ktor planned) handles the network cryptography and token 
@@ -47,14 +54,58 @@ and dynamically drops (`HIDE`) or overwrites (`REDACT`) restricted fields on the
 ## What Makes Ihawu Better?
 
 * **Zero-Friction Coexistence:** Let Keycloak handle passwords, UI login screens, and MFA. Let OPA evaluate complex 
-corporate-wide Rego files. Ihawu connects directly to them to handle the complex, framework-specific task of data 
-masking within your application.
-* **Fail-Closed by Default:** Security boundaries must be unbreakable. If an authentication or rule validation lookup
-error occurs, Ihawu fails closed—returning an empty JSON block `{}` or dropping the response entirely rather than
-leaking unauthorized data.
-* **Reflective Safety without Performance Overhead:** Fields are evaluated using fast, cached property mappings rather
-than slow runtime reflection loops on hot request paths, introducing a negligible latency overhead of less than 
-50 microseconds per payload.
+corporate-wide Rego files. Ihawu takes the identity your framework has already verified and the decisions your policy
+source returns, and handles the framework-specific task of enforcing them on the way out. It is a Policy Enforcement
+Point, not a second decision engine.
+* **Fail-Closed by Default:** If no verified principal is attached, or a policy lookup fails, Ihawu masks every field
+of the resource rather than serializing it — you get an empty JSON block `{}`, not a leak. Forgetting to wire Ihawu up
+produces an empty object; with hand-rolled masking, forgetting produces a leak. The failure modes run in opposite
+directions.
+* **No Reflection on the Hot Path:** Property writers are wrapped once per type, while Jackson builds that type's
+serializer — not per request. Policies are resolved once per (call, resource) and memoized for the rest of the write,
+so a response containing a thousand instances of a resource resolves its policy once. There is no runtime reflection
+on the serialization path. (No published benchmark yet — see #71.)
+
+---
+
+## Why Not Just `@JsonView` or `@JsonFilter`?
+
+Fair question, and for a small enough problem the answer is: you should. Jackson ships both, and Ihawu is built
+**on** Jackson's serializer SPI rather than as an alternative to it.
+
+* **`@JsonView`** — if you have two or three fixed response shapes known at compile time, this is the right tool
+  and Ihawu is overkill. It cannot substitute a value, though, so a redacted `***-**-****` is not expressible.
+* **`@JsonFilter`** — dynamic, and much closer to what Ihawu does. Read honestly, `ihawu-core` is a policy-driven,
+  principal-aware `@JsonFilter` with the wiring and the policy model supplied for you.
+
+What you would build yourself to get there: a `PropertyFilter` subclass to substitute placeholders rather than
+merely drop fields; a `MappingJacksonValue` wrapper at every handler, where the one you forget is the one that
+leaks; policy plumbing to load rules from config, a database, or OPA; and manual assembly of the filter set for
+nested types and collections. Ihawu supplies those, registers once on the `ObjectMapper`, recurses automatically,
+and fails closed when identity is missing.
+
+Full comparison — including masking in the database, which is stronger than Ihawu wherever it applies:
+[Comparison](https://ihawu.org/concepts/comparison/).
+
+---
+
+## What Ihawu Does Not Protect
+
+Ihawu enforces at **one** exit: an `ObjectMapper` with `IhawuModule` registered, serializing a call that has an
+`IhawuPrincipal` attached. Your object still travels through the application in full, and nothing masks it on any
+other path out of the process. It is **not** masked when it is written to a log, published to Kafka, written to a
+cache, exported to CSV, rendered into a server-side template, or serialized by a second `ObjectMapper` without the
+module registered.
+
+That is inherent to enforcing at the serialization boundary, and it is a deliberate trade — masking where the
+response is written is what lets your controllers return whole, truthful domain objects. But it means Ihawu masks
+**API responses**, not "sensitive data" in general. If an SSN must never appear in a log line, Ihawu is not what
+stops it.
+
+Treat Ihawu as last-mile, defense-in-depth enforcement, layered with controls that act closer to the data —
+column-level grants, row-level security, vendor dynamic masking — which are stronger wherever they apply, because
+the value never reaches your JVM at all. Full threat model:
+[What Ihawu does not protect](https://ihawu.org/concepts/how-it-works/#what-ihawu-does-not-protect).
 
 ---
 
@@ -92,19 +143,49 @@ With Ihawu, your business service controllers remain clean, explicit, and unpoll
 You return your raw, strongly-typed database records directly:
 
 ### 1. Define Your Target Domain Model
+
+Declare every maskable field nullable — a hidden field is absent from the payload, so the type has to permit
+its absence.
+
 ```kotlin
 @IhawuResource(name = "UserProfile")
 data class UserProfile(
     val userId: String,
     val fullName: String,
     val email: String,
-    val socialSecurityNumber: String,
-    val performanceReviewNotes: String
+    val socialSecurityNumber: String?,
+    val performanceReviewNotes: String?
 )
 ```
 
-### 2. Configure Dynamic Policies via Admin UI (or File Local Config)
-If a standard user requests this object, Ihawu evaluates your business dynamic data rules:
+> **Masking has to respect your type contract.** A masked response still has to deserialize into the type it
+> claims to be, so the strategy is constrained by how the field is declared. `HIDE` drops the field, so apply
+> it only to a **nullable** field. `REDACT` substitutes a string placeholder, so today it is type-safe on
+> **`String`** fields only — redacting a numeric field would write a string where the schema promises a number.
+> In short: **`REDACT` a `String`, `HIDE` a nullable.** Both constraints are being lifted — see #67 and #68.
+
+### 2. Declare Your Policies
+
+On Spring Boot, bind the rules straight from configuration — no code:
+
+```yaml
+ihawu:
+  policies:
+    - resource: UserProfile
+      roles:
+        EMPLOYEE:
+          - field: socialSecurityNumber
+            strategy: REDACT
+            placeholder: "***-**-****"
+          - field: performanceReviewNotes
+            strategy: HIDE
+```
+
+For rules that live elsewhere — a database, a per-tenant service, OPA — implement the
+`ResourcePolicyResolver` SPI and register it as a bean. Ihawu calls it; it does not care where your rules
+come from.
+
+So for an `EMPLOYEE` requesting this object:
 * **`socialSecurityNumber`** ──► Strategy: `REDACT` (Placeholder: `"***-**-****"`)
 * **`performanceReviewNotes`** ──► Strategy: `HIDE` (Removes property entirely)
 
@@ -132,6 +213,27 @@ suites within the `/samples` project subdirectory.
 Dokka matches these targets via the `@sample` compiler tag. This guarantees that if our API layout ever shifts, 
 our public user documentation breaks at compile time during CI verification builds. Your guides are guaranteed to 
 be 100% accurate and functional forever.
+
+---
+
+## Roadmap
+
+Work is tracked in [GitHub milestones](https://github.com/maureenCindy/ihawu/milestones). Three, in order:
+
+* **Docs: claims match behaviour** — every claim in the README, CONTRIBUTING, and the docs site is either true or
+  removed. No feature described that does not exist.
+* **0.2.0 — Type-correct masking** — masked output must satisfy the declared type contract. Type-aware `REDACT`
+  placeholders (#67), `HIDE` validated against nullability (#68), and observable fail-closed behaviour (#72).
+  Breaking: `FieldPolicy.placeholder` widens from `String?`.
+* **0.3.0 — Serialization-neutral core** — lift the enforcement point off Jackson onto a serialization-neutral SPI.
+  This is what unlocks Kotlin Multiplatform and a Ktor adapter, and it is the same seam that would let Ihawu mask at
+  sinks other than HTTP JSON.
+
+On multiplatform, specifically: `ihawu-core` depends on `jackson-databind` and `slf4j-api`, both JVM-only, and the
+masking engine is built directly on Jackson's serializer SPI. KMP is therefore not a target you can add to the build
+— it needs the 0.3.0 refactor first. `kotlinx.serialization` also has no equivalent of Jackson's
+`BeanSerializerModifier`, so that backend is a second engine rather than a port. The full explanation is on the docs
+site: [Running beyond the JVM](https://ihawu.org/core/overview/#running-beyond-the-jvm).
 
 ---
 
