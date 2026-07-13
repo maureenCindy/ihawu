@@ -99,16 +99,26 @@ With Ihawu, your business service controllers remain clean, explicit, and unpoll
 You return your raw, strongly-typed database records directly:
 
 ### 1. Define Your Target Domain Model
+
+Declare every maskable field nullable — a hidden field is absent from the payload, so the type has to permit
+its absence.
+
 ```kotlin
 @IhawuResource(name = "UserProfile")
 data class UserProfile(
     val userId: String,
     val fullName: String,
     val email: String,
-    val socialSecurityNumber: String,
-    val performanceReviewNotes: String
+    val socialSecurityNumber: String?,
+    val performanceReviewNotes: String?
 )
 ```
+
+> **Masking has to respect your type contract.** A masked response still has to deserialize into the type it
+> claims to be, so the strategy is constrained by how the field is declared. `HIDE` drops the field, so apply
+> it only to a **nullable** field. `REDACT` substitutes a string placeholder, so today it is type-safe on
+> **`String`** fields only — redacting a numeric field would write a string where the schema promises a number.
+> In short: **`REDACT` a `String`, `HIDE` a nullable.** Both constraints are being lifted — see #67 and #68.
 
 ### 2. Declare Your Policies
 
