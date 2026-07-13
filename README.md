@@ -1,6 +1,7 @@
 # Ihawu
-Ihawu is a unified, cross-framework policy enforcement and dynamic data-masking engine built in **Kotlin (JVM)** with
-first-class support for **Spring Boot** (with **Ktor** support planned). 
+Ihawu is a policy enforcement and dynamic data-masking engine built in **Kotlin (JVM)**, with first-class support for
+**Spring Boot**. Ktor and Kotlin Multiplatform are design goals, not near-term releases — see
+[Roadmap](#roadmap) below. 
 
 ---
 
@@ -212,6 +213,27 @@ suites within the `/samples` project subdirectory.
 Dokka matches these targets via the `@sample` compiler tag. This guarantees that if our API layout ever shifts, 
 our public user documentation breaks at compile time during CI verification builds. Your guides are guaranteed to 
 be 100% accurate and functional forever.
+
+---
+
+## Roadmap
+
+Work is tracked in [GitHub milestones](https://github.com/maureenCindy/ihawu/milestones). Three, in order:
+
+* **Docs: claims match behaviour** — every claim in the README, CONTRIBUTING, and the docs site is either true or
+  removed. No feature described that does not exist.
+* **0.2.0 — Type-correct masking** — masked output must satisfy the declared type contract. Type-aware `REDACT`
+  placeholders (#67), `HIDE` validated against nullability (#68), and observable fail-closed behaviour (#72).
+  Breaking: `FieldPolicy.placeholder` widens from `String?`.
+* **0.3.0 — Serialization-neutral core** — lift the enforcement point off Jackson onto a serialization-neutral SPI.
+  This is what unlocks Kotlin Multiplatform and a Ktor adapter, and it is the same seam that would let Ihawu mask at
+  sinks other than HTTP JSON.
+
+On multiplatform, specifically: `ihawu-core` depends on `jackson-databind` and `slf4j-api`, both JVM-only, and the
+masking engine is built directly on Jackson's serializer SPI. KMP is therefore not a target you can add to the build
+— it needs the 0.3.0 refactor first. `kotlinx.serialization` also has no equivalent of Jackson's
+`BeanSerializerModifier`, so that backend is a second engine rather than a port. The full explanation is on the docs
+site: [Running beyond the JVM](https://ihawu.org/core/overview/#running-beyond-the-jvm).
 
 ---
 

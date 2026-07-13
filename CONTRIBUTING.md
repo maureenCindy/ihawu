@@ -12,8 +12,12 @@ structured contribution model inspired by the JetBrains standard library reposit
 
 Before you open a terminal or write any code, you must commit to our three golden architectural constraints:
 
-1. **Strict JVM Backend Focus:** Ihawu is built using **pure Kotlin (JVM)**. Do not introduce Multiplatform (KMP) 
-compile configurations or native cross-platform artifacts. We target **Java 17+** optimization profiles.
+1. **JVM Today, Multiplatform By Design:** Ihawu is **pure Kotlin (JVM)** and targets **Java 17+**. Do not add
+Multiplatform (KMP) compile configurations or native artifacts to the current build ad hoc — they will not work.
+`ihawu-core` depends on `jackson-databind` and `slf4j-api`, both JVM-only, and the masking engine is built directly
+on Jackson's serializer SPI. Multiplatform is a genuine design goal, but the path runs through lifting the
+enforcement point onto a serialization-neutral interface first; that work is tracked under the *0.3.0 —
+Serialization-neutral core* milestone. Start there, not in the build file.
 2. **Absolute Core Isolation:** The `ihawu-core` module must remain entirely unpolluted by web frameworks. 
 You are strictly forbidden from adding imports from `org.springframework.*`, `io.ktor.*`, or heavy Java servlet layers
 inside `ihawu-core`. If you need the caller's identity, use the core `IhawuPrincipal` abstraction. Jackson *is*
