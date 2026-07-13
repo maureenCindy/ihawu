@@ -27,10 +27,16 @@ Ihawu operates as an automated, stateless data filter embedded natively inside y
 egress lifecycles:
 1. Ingress HTTP Request ────► Framework validates OAuth2 JWT (Keycloak)
 2. Ihawu Adapter    ──► Maps raw claims into IhawuPrincipal
-3. Policy Engine  ──► Fetches live rules (DB, Config, or OPA)
+3. ResourcePolicyResolver ──► Resolves this caller's field policies for the resource
 4. Controller Logic Runs ──► Returns raw, complete Database Entity class 
 5. Ihawu Masker    ──► Intercepts Jackson (kotlinx.serialization planned)
 6. Outbound JSON Stream ──► Transparently stripped (HIDE) or obfuscated (REDACT)
+
+Step 3 goes through the `ResourcePolicyResolver` SPI. Two implementations ship: `RoleBasedResourcePolicyResolver`
+for static role-based rules, and — on Spring Boot — `ConfigResourcePolicyProvider`, which binds rules straight
+from `ihawu.policies` configuration. Either can be wrapped in `CachingResourcePolicyResolver`. To source rules
+from somewhere else — a database, a per-tenant service, OPA — you implement the SPI; Ihawu does not ship those
+integrations.
 
 ### Guiding principles
 1. **Ingress Capture:** Your host framework (Spring Boot today; Ktor planned) handles the network cryptography and token 
@@ -47,8 +53,9 @@ and dynamically drops (`HIDE`) or overwrites (`REDACT`) restricted fields on the
 ## What Makes Ihawu Better?
 
 * **Zero-Friction Coexistence:** Let Keycloak handle passwords, UI login screens, and MFA. Let OPA evaluate complex 
-corporate-wide Rego files. Ihawu connects directly to them to handle the complex, framework-specific task of data 
-masking within your application.
+corporate-wide Rego files. Ihawu takes the identity your framework has already verified and the decisions your policy
+source returns, and handles the framework-specific task of enforcing them on the way out. It is a Policy Enforcement
+Point, not a second decision engine.
 * **Fail-Closed by Default:** Security boundaries must be unbreakable. If an authentication or rule validation lookup
 error occurs, Ihawu fails closed—returning an empty JSON block `{}` or dropping the response entirely rather than
 leaking unauthorized data.
@@ -103,8 +110,28 @@ data class UserProfile(
 )
 ```
 
-### 2. Configure Dynamic Policies via Admin UI (or File Local Config)
-If a standard user requests this object, Ihawu evaluates your business dynamic data rules:
+### 2. Declare Your Policies
+
+On Spring Boot, bind the rules straight from configuration — no code:
+
+```yaml
+ihawu:
+  policies:
+    - resource: UserProfile
+      roles:
+        EMPLOYEE:
+          - field: socialSecurityNumber
+            strategy: REDACT
+            placeholder: "***-**-****"
+          - field: performanceReviewNotes
+            strategy: HIDE
+```
+
+For rules that live elsewhere — a database, a per-tenant service, OPA — implement the
+`ResourcePolicyResolver` SPI and register it as a bean. Ihawu calls it; it does not care where your rules
+come from.
+
+So for an `EMPLOYEE` requesting this object:
 * **`socialSecurityNumber`** ──► Strategy: `REDACT` (Placeholder: `"***-**-****"`)
 * **`performanceReviewNotes`** ──► Strategy: `HIDE` (Removes property entirely)
 
