@@ -60,9 +60,10 @@ Point, not a second decision engine.
 of the resource rather than serializing it — you get an empty JSON block `{}`, not a leak. Forgetting to wire Ihawu up
 produces an empty object; with hand-rolled masking, forgetting produces a leak. The failure modes run in opposite
 directions.
-* **Reflective Safety without Performance Overhead:** Fields are evaluated using fast, cached property mappings rather
-than slow runtime reflection loops on hot request paths, introducing a negligible latency overhead of less than 
-50 microseconds per payload.
+* **No Reflection on the Hot Path:** Property writers are wrapped once per type, while Jackson builds that type's
+serializer — not per request. Policies are resolved once per (call, resource) and memoized for the rest of the write,
+so a response containing a thousand instances of a resource resolves its policy once. There is no runtime reflection
+on the serialization path. (No published benchmark yet — see #71.)
 
 ---
 
