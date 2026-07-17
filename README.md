@@ -144,8 +144,9 @@ You return your raw, strongly-typed database records directly:
 
 ### 1. Define Your Target Domain Model
 
-Declare every maskable field nullable — a hidden field is absent from the payload, so the type has to permit
-its absence.
+Declare every maskable field nullable — a masked field is either omitted (`HIDE`) or set to `null` (`REDACT`
+on a non-`String`), so its type has to permit that. (`String` fields may stay non-nullable — they redact to a
+placeholder.)
 
 ```kotlin
 @IhawuResource(name = "UserProfile")
@@ -158,11 +159,13 @@ data class UserProfile(
 )
 ```
 
-> **Masking has to respect your type contract.** A masked response still has to deserialize into the type it
-> claims to be, so the strategy is constrained by how the field is declared. `HIDE` drops the field, so apply
-> it only to a **nullable** field. `REDACT` substitutes a string placeholder, so today it is type-safe on
-> **`String`** fields only — redacting a numeric field would write a string where the schema promises a number.
-> In short: **`REDACT` a `String`, `HIDE` a nullable.** Both constraints are being lifted — see #67 and #68.
+> **Masking respects your type contract.** A masked response still has to deserialize into the type it claims
+> to be, so what a strategy may do depends on how the field is declared. `REDACT` writes a placeholder on a
+> `String`, and `null` on any other **nullable** field — so a numeric or boolean field is redactable only when
+> it is nullable, never to a fake `0` or `false`. `HIDE` omits the field, so it too needs a **nullable/optional**
+> field. A non-nullable non-`String` field has no honest masked form; declare it nullable to mask it. On Spring
+> Boot these rules are checked **at startup** — a policy that cannot be honoured fails the application context,
+> naming the field ([ADR 0005](docs/adr/0005-hard-fail-on-unenforceable-masking-policy.md)).
 
 ### 2. Declare Your Policies
 
@@ -222,9 +225,11 @@ Work is tracked in [GitHub milestones](https://github.com/maureenCindy/ihawu/mil
 
 * **Docs: claims match behaviour** — every claim in the README, CONTRIBUTING, and the docs site is either true or
   removed. No feature described that does not exist.
-* **0.2.0 — Type-correct masking** — masked output must satisfy the declared type contract. Type-aware `REDACT`
-  placeholders (#67), `HIDE` validated against nullability (#68), and observable fail-closed behaviour (#72).
-  Breaking: `FieldPolicy.placeholder` widens from `String?`.
+* **0.2.0 — Type-correct masking** — masked output must satisfy the declared type contract. Type-aware masking
+  (`REDACT` a `String` to a placeholder or any nullable field to `null`; `HIDE` an optional field), with policies
+  that cannot be honoured failing at startup (#67, merging #68; [ADR 0005](docs/adr/0005-hard-fail-on-unenforceable-masking-policy.md)),
+  and observable fail-closed behaviour (#72). Breaking: masking a non-`String` (or any `HIDE`) field now requires
+  it to be nullable, and `MaskingStrategy.defaultValue` is renamed `defaultPlaceholder`.
 * **0.3.0 — Serialization-neutral core** — lift the enforcement point off Jackson onto a serialization-neutral SPI.
   This is what unlocks Kotlin Multiplatform and a Ktor adapter, and it is the same seam that would let Ihawu mask at
   sinks other than HTTP JSON.
