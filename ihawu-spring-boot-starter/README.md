@@ -130,6 +130,29 @@ provider or policy engine; it executes their decisions at the egress boundary. S
 
 ---
 
+## Operability
+
+Ihawu fails closed: on a masking failure it omits fields rather than leak them, so the response is `{}`
+(or a partial object) with an HTTP **200**. An empty `{}` is therefore **ambiguous** — *"fully masked for
+this caller"* or *"policy resolution failed"* — and byte-identical either way.
+
+Detect a real failure from the logs (resource name only, never the value):
+
+- `WARN` — no `IhawuPrincipal` on the call.
+- `ERROR` — the resolver threw (a policy-store outage or misconfiguration): *"serialization failing closed"*.
+- `ERROR` — a field's policy can't be honoured at runtime (`HIDE` on a non-nullable field, `REDACT` on a
+  non-nullable non-`String`).
+
+**Alert on the resolver-failure `ERROR`** — a sustained rate is your policy source going down and every
+resource degrading to `{}`, an outage behind a `200`. (Configured policies that can't be honoured are
+rejected at [startup](#static-masking-rules-ihawupolicies) already; runtime ones only come from a dynamic
+resolver.)
+
+A Micrometer counter (`ihawu.masking.failures`) and an optional `ihawu.on-policy-failure=fail-request`
+mode (resolver outage → `5xx`) are planned for the serialization-neutral core (#89).
+
+---
+
 ## License
 
 Apache License 2.0 — see [LICENSE](../LICENSE).

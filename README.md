@@ -207,6 +207,34 @@ The client safely receives:
 
 ---
 
+## Operability
+
+Ihawu **fails closed**: when it cannot mask safely it omits fields rather than leak them, so a resource
+serializes as `{}` (or a partial object) with an HTTP **200**. That is the correct default — but it makes
+an empty `{}` **ambiguous**: it can mean *"fully masked for this caller"* **or** *"policy resolution
+failed and Ihawu fell back to masking everything."* The two are byte-identical on the wire.
+
+Until richer signals land (below), tell them apart from the **logs** — every fail-closed decision is
+logged with the resource name, never the protected value:
+
+| Level | When | Message |
+| --- | --- | --- |
+| `WARN` | No `IhawuPrincipal` on the serialization call | *"No IhawuPrincipal attached … serialization failing closed for resource '…'"* |
+| `ERROR` | The resolver threw (misconfig or policy-store outage) | *"Ihawu masking failed for resource '…', serialization failing closed"* |
+| `ERROR` | A field's policy can't be honoured at runtime (`HIDE` on a non-nullable field, or `REDACT` on a non-nullable non-`String`) | *"Ihawu HIDE on required field …"* / *"Ihawu REDACT on non-nullable non-String …"* |
+
+**Alert on the resolver-failure `ERROR`.** A sustained rate of it means your policy source is down and
+every `@IhawuResource` is degrading to `{}` — an outage wearing a `200`, not normal masking. (The runtime
+type-contract `ERROR`s should be rare: statically-configured policies are rejected at startup
+([ADR 0005](docs/adr/0005-hard-fail-on-unenforceable-masking-policy.md)); they only reach runtime from a
+dynamic resolver.)
+
+A Micrometer failure metric (`ihawu.masking.failures`) and an optional `fail-request` mode — turning a
+resolver outage into a `5xx` your monitoring already understands — are planned for the
+serialization-neutral core (#89).
+
+---
+
 ## Executable Documentation Philosophy
 
 Following the strict code documentation principles engineered by the JetBrains standard library team, all documentation
