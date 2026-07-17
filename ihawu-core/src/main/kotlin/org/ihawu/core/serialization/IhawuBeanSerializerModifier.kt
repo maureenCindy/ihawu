@@ -28,8 +28,14 @@ internal class IhawuBeanSerializerModifier(
         val annotation =
             beanDesc.beanClass.getAnnotation(IhawuResource::class.java)
                 ?: return beanProperties // not an Ihawu resource -> untouched
+
+        // Capabilities computed once per type here; the same helper backs the startup validator, so a
+        // policy it accepts behaves exactly as predicted at serialization time.
+        val capabilities = MaskingCapabilities.of(beanDesc)
+
         return beanProperties.mapTo(mutableListOf()) {
-            MaskingPropertyWriter(it, resolver, annotation.name)
+            val capability = capabilities[it.name] ?: MaskingCapability.of(it.type, nullable = false)
+            MaskingPropertyWriter(it, resolver, annotation.name, capability)
         }
     }
 }

@@ -1,6 +1,6 @@
 # Contributing to Ihawu
 
-Thank you for your interest in contributing to Aegis IAM! We are excited to build a zero-boilerplate, framework-agnostic
+Thank you for your interest in contributing to Ihawu! We are excited to build a zero-boilerplate, framework-agnostic
 data privacy layer for the JVM ecosystem alongside the open-source community.
 
 To maintain an elite developer experience (DX), absolute security reliability, and clean code hygiene, we follow a 
@@ -12,11 +12,17 @@ structured contribution model inspired by the JetBrains standard library reposit
 
 Before you open a terminal or write any code, you must commit to our three golden architectural constraints:
 
-1. **Strict JVM Backend Focus:** Ihawu is built using **pure Kotlin (JVM)**. Do not introduce Multiplatform (KMP) 
-compile configurations or native cross-platform artifacts. We target **Java 17+** optimization profiles.
+1. **JVM Today, Multiplatform By Design:** Ihawu is **pure Kotlin (JVM)** and targets **Java 17+**. Do not add
+Multiplatform (KMP) compile configurations or native artifacts to the current build ad hoc — they will not work.
+`ihawu-core` depends on `jackson-databind` and `slf4j-api`, both JVM-only, and the masking engine is built directly
+on Jackson's serializer SPI. Multiplatform is a genuine design goal, but the path runs through lifting the
+enforcement point onto a serialization-neutral interface first; that work is tracked under the *0.3.0 —
+Serialization-neutral core* milestone. Start there, not in the build file.
 2. **Absolute Core Isolation:** The `ihawu-core` module must remain entirely unpolluted by web frameworks. 
 You are strictly forbidden from adding imports from `org.springframework.*`, `io.ktor.*`, or heavy Java servlet layers
-inside `ihawu-core`. If you need request metadata, you must use our core `IamRequest` abstraction.
+inside `ihawu-core`. If you need the caller's identity, use the core `IhawuPrincipal` abstraction. Jackson *is*
+currently permitted in core — it is the serialization engine masking is built on. Removing that coupling is tracked
+under the *0.3.0 — Serialization-neutral core* milestone.
 3. **No Heavy Runtime Reflection:** Dynamic field masking evaluates on hot response pathways right before JSON output 
 serialization. Do not introduce slow runtime reflection (`java.lang.reflect`) inside processing pipelines. 
 Leverage cached property maps or framework native streaming filters.
@@ -31,7 +37,7 @@ Every single code example visible in our API references or Markdown guides must 
 * If you modify a public interface, add a feature, or resolve a tracking issue under our text-specialization milestones,
 you **must create or update a corresponding compiling function** inside the `samples` directory.
 * Your source code file must use the Dokka **`@sample`** tag to target that specific function.
-* The continuous integration (CI) workflow executes `./gradlew dokkaHtmlMultiModule` on every pull request. 
+* The continuous integration (CI) workflow executes `./gradlew dokkaGenerate` on every pull request. 
 If your documentation sample fails compilation, the build fails fast, protecting our documentation from breaking.
 
 ---
@@ -59,7 +65,7 @@ We manage our open-source roadmap directly through our **GitHub Project Board**.
 4. Maintainer Merge 
 
 ### 1. Claiming an Issue
-* Navigate to our GitHub Issues page. Look for tickets flagged with the **`good-first-issue`** label.
+* Navigate to our GitHub Issues page. Look for tickets flagged with the **`good first issue`** label.
 * Comment on the issue to request assignment. This avoids duplicate effort from other community contributors.
 
 ### 2. Branch Hygiene
@@ -102,13 +108,13 @@ checks and cause the pull request review to be blocked.
 to squash your branch history into clean, atomic semantic blocks before a maintainer hits merge.
 
 
-### 3. Submission Checklist
+### 4. Submission Checklist
 When you open a Pull Request (PR), our automated template will ask you to confirm the following points:
-* [ ] Does your code follow the standard Kotlin code style configurations? (Verify by running `./gradlew ktlintCheck` or `./gradlew detekt`).
+* [ ] Does your code follow the standard Kotlin code style configurations? (Verify by running `./gradlew ktlintCheck`).
 * [ ] Did you include a compiling execution test inside the `samples` module?
 * [ ] Does your pull request description contain a closing keyword linked to an active issue? (e.g., `Closes #14`).
 
-### 4. Automated CI Gating
+### 5. Automated CI Gating
 Once your PR is submitted, GitHub Actions will fire two parallel pipelines:
 * **`verify.yml`**: Runs code compilers, checkstyle rules, and unit tests across all framework integration packages.
 * **Dokka Pages Worker**: Generates a temporary site preview of your documentation updates, ensuring the linked 

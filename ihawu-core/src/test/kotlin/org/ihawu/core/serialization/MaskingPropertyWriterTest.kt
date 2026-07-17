@@ -1,5 +1,6 @@
 package org.ihawu.core.serialization
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.ihawu.core.annotation.IhawuResource
@@ -20,7 +21,7 @@ import kotlin.test.assertTrue
 private data class Promotion(
     val startDate: String,
     val position: String,
-    val salary: Double,
+    val salary: Double?, // nullable non-String: REDACT masks to JSON null
 )
 
 @IhawuResource("employee")
@@ -28,7 +29,34 @@ private data class Employee(
     val name: String,
     val ssn: String,
     val promotions: List<Promotion>,
+    val nickname: String? = null, // nullable String: REDACT -> placeholder, HIDE -> silent omit
 )
+
+/** A non-nullable non-String field is UNSAFE to redact — there is no contract-safe masked value. */
+@IhawuResource("payslip")
+private data class Payslip(
+    val employeeId: String,
+    val netPay: Int,
+)
+
+/** The masked field is renamed, so nullability must resolve via the logical property name. */
+@IhawuResource("account_balance")
+private data class AccountBalance(
+    val id: String,
+    @JsonProperty("acct_balance") val balance: Int?,
+)
+
+/** No primary constructor (secondary only): nullability is unknown, so fields default to non-nullable. */
+@IhawuResource("legacy")
+private class Legacy {
+    val reference: String
+    val amount: Int
+
+    constructor(reference: String, amount: Int) {
+        this.reference = reference
+        this.amount = amount
+    }
+}
 
 private class CustomPolicyResolver : ResourcePolicyResolver {
     override fun resolve(
@@ -94,6 +122,20 @@ class MaskingPropertyWriterTest {
         return mapper.readTree(json)
     }
 
+    /** Serializes any [value] through an [IhawuModule] backed by [resolver], carrying [principal]. */
+    private fun serializeValue(
+        resolver: ResourcePolicyResolver,
+        value: Any,
+    ): JsonNode {
+        val mapper = ObjectMapper().registerModule(IhawuModule(resolver))
+        val json =
+            mapper
+                .writer()
+                .withAttribute(IhawuSerialization.PRINCIPAL, principal)
+                .writeValueAsString(value)
+        return mapper.readTree(json)
+    }
+
     @Test
     fun `serializes the resource as an empty object when no principal is provided`() {
         // No principal is a normal unauthenticated call, not an error: fail closed silently.
@@ -148,11 +190,32 @@ class MaskingPropertyWriterTest {
 
         assertEquals("2026-07-01", actualPromo["startDate"].asText())
         assertEquals("AI Manager", actualPromo["position"].asText())
-        assertEquals("$***", actualPromo["salary"].asText())
+        // nullable non-String REDACT -> JSON null, not a plausible fake number (the configured
+        // "$***" placeholder does not apply to non-String fields).
+        assertTrue(actualPromo.has("salary") && actualPromo["salary"].isNull)
     }
 
     @Test
-    fun `omits a field entirely when its policy strategy is HIDE`() {
+    fun `omits a nullable field silently when its policy strategy is HIDE`() {
+        val hidingResolver =
+            object : ResourcePolicyResolver {
+                override fun resolve(
+                    principal: IhawuPrincipal,
+                    resource: String,
+                ): List<FieldPolicy> = listOf(FieldPolicy("acct_balance", MaskingStrategy.HIDE))
+            }
+
+        val tree = serializeValue(hidingResolver, AccountBalance("acc_1", 4200))
+
+        assertFalse(tree.has("acct_balance")) // nullable/optional -> HIDE omits, contract-safe
+        assertEquals("acc_1", tree["id"].asText()) // unlisted field still passes through
+        assertFalse(LogRecorder.lines.any { it.level == Level.ERROR }) // valid HIDE -> no error
+    }
+
+    @Test
+    fun `fails closed with a log when HIDE targets a non-nullable field`() {
+        // HIDE on a required field still omits (never leak), but flags the misconfiguration; the loud
+        // hard-fail lives in startup validation, not the hot path.
         val hidingResolver =
             object : ResourcePolicyResolver {
                 override fun resolve(
@@ -163,8 +226,14 @@ class MaskingPropertyWriterTest {
 
         val tree = serialize(hidingResolver)
 
-        assertFalse(tree.has("ssn")) // HIDE -> field omitted, not even a placeholder
+        assertFalse(tree.has("ssn")) // still omitted -> no leak
         assertEquals("Mary", tree["name"].asText()) // unlisted field still passes through
+        assertTrue(
+            LogRecorder.lines.any {
+                it.level == Level.ERROR && it.message.contains("employee") && it.message.contains("ssn")
+            },
+        )
+        assertFalse(LogRecorder.lines.any { it.message.contains("088856") }) // payload never logged
     }
 
     @Test
@@ -179,7 +248,7 @@ class MaskingPropertyWriterTest {
 
         val tree = serialize(resolver)
 
-        assertEquals("***-**-****", tree["ssn"].asText()) // falls back to MaskingStrategy.REDACT.defaultValue
+        assertEquals("***-**-****", tree["ssn"].asText()) // falls back to MaskingStrategy.REDACT.defaultPlaceholder
     }
 
     @Test
@@ -200,5 +269,94 @@ class MaskingPropertyWriterTest {
         assertEquals("Mary", tree["name"].asText()) // parent survives
         assertEquals("***ssn", tree["ssn"].asText()) // parent still masked
         assertTrue(tree["promotions"].all { it.isObject && it.isEmpty }) // every item {}
+    }
+
+    @Test
+    fun `redacts a nullable String field with its placeholder`() {
+        // A nullable String redacts exactly like a non-null String — the placeholder, not JSON null.
+        val resolver =
+            object : ResourcePolicyResolver {
+                override fun resolve(
+                    principal: IhawuPrincipal,
+                    resource: String,
+                ): List<FieldPolicy> = listOf(FieldPolicy("nickname", MaskingStrategy.REDACT, "***nick"))
+            }
+
+        val tree = serialize(resolver, Employee("Mary", "088856", emptyList(), nickname = "Mimi"))
+
+        assertEquals("***nick", tree["nickname"].asText())
+    }
+
+    @Test
+    fun `omits a nullable String field silently under HIDE`() {
+        val resolver =
+            object : ResourcePolicyResolver {
+                override fun resolve(
+                    principal: IhawuPrincipal,
+                    resource: String,
+                ): List<FieldPolicy> = listOf(FieldPolicy("nickname", MaskingStrategy.HIDE))
+            }
+
+        val tree = serialize(resolver, Employee("Mary", "088856", emptyList(), nickname = "Mimi"))
+
+        assertFalse(tree.has("nickname")) // nullable -> HIDE omits, contract-safe
+        assertEquals("Mary", tree["name"].asText())
+        assertFalse(LogRecorder.lines.any { it.level == Level.ERROR }) // valid HIDE -> no error
+    }
+
+    @Test
+    fun `fails closed when REDACT targets a non-nullable non-String field`() {
+        val resolver =
+            object : ResourcePolicyResolver {
+                override fun resolve(
+                    principal: IhawuPrincipal,
+                    resource: String,
+                ): List<FieldPolicy> = listOf(FieldPolicy("netPay", MaskingStrategy.REDACT, "***"))
+            }
+
+        val tree = serializeValue(resolver, Payslip("emp_1", 5000))
+
+        assertFalse(tree.has("netPay")) // UNSAFE -> omitted, never a plausible fake number
+        assertEquals("emp_1", tree["employeeId"].asText()) // unmasked field passes through
+        assertTrue(
+            LogRecorder.lines.any {
+                it.level == Level.ERROR && it.message.contains("payslip") && it.message.contains("netPay")
+            },
+        )
+        assertFalse(LogRecorder.lines.any { it.message.contains("5000") }) // value never logged
+    }
+
+    @Test
+    fun `treats fields as non-nullable when the type has no primary constructor`() {
+        val resolver =
+            object : ResourcePolicyResolver {
+                override fun resolve(
+                    principal: IhawuPrincipal,
+                    resource: String,
+                ): List<FieldPolicy> = listOf(FieldPolicy("amount", MaskingStrategy.REDACT, "***"))
+            }
+
+        val tree = serializeValue(resolver, Legacy("ref-9", 500))
+
+        assertFalse(tree.has("amount")) // no primary ctor -> assumed non-nullable -> UNSAFE -> omitted
+        assertEquals("ref-9", tree["reference"].asText())
+    }
+
+    @Test
+    fun `resolves nullability through a JsonProperty rename`() {
+        // The policy targets the serialized name; nullability must resolve via the logical property
+        // name. Without the serialized -> logical bridge, balance reads as non-nullable -> UNSAFE ->
+        // omitted, so this asserting a present JSON null guards that regression.
+        val resolver =
+            object : ResourcePolicyResolver {
+                override fun resolve(
+                    principal: IhawuPrincipal,
+                    resource: String,
+                ): List<FieldPolicy> = listOf(FieldPolicy("acct_balance", MaskingStrategy.REDACT, "***"))
+            }
+
+        val tree = serializeValue(resolver, AccountBalance("acc_1", 4200))
+
+        assertTrue(tree.has("acct_balance") && tree["acct_balance"].isNull) // nullable Int? -> JSON null
     }
 }

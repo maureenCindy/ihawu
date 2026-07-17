@@ -7,17 +7,16 @@ package org.ihawu.core.masking
  * serialization boundary. The [securityLevel] allows policies to compare and
  * escalate strategies — a higher value means stricter enforcement.
  *
- * @property description A human-readable explanation of the strategy behaviour.
+ * @property description A human-readable explanation of the strategy behavior.
  * @property securityLevel Numeric rank used for comparison. Higher values indicate
  *   stricter protection (e.g. [HIDE] > [REDACT]).
- * @property defaultValue An optional factory that produces the replacement value
- *   written to the output stream. Returns `null` for strategies that remove the
- *   field entirely rather than substituting a placeholder.
+ * @property defaultPlaceholder The fallback *string* placeholder for REDACT when a FieldPolicy gives none. Non-String fields
+ * never use this — their masked form is JSON null, decided by [org.ihawu.core.serialization.MaskingCapability].
  */
 enum class MaskingStrategy(
     val description: String,
     val securityLevel: Int,
-    val defaultValue: (() -> String)? = null,
+    val defaultPlaceholder: String? = null,
 ) {
     /** Removes the field entirely from the serialized output. */
     HIDE(
@@ -29,6 +28,6 @@ enum class MaskingStrategy(
     REDACT(
         description = "Replaces the field value with an obfuscated placeholder",
         securityLevel = 1,
-        defaultValue = { "***-**-****" },
+        defaultPlaceholder = "***-**-****",
     ),
 }
