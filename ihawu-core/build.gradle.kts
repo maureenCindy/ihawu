@@ -9,7 +9,7 @@ plugins {
 }
 
 dependencies {
-    api("com.fasterxml.jackson.core:jackson-databind:2.21.1")
+    api("com.fasterxml.jackson.core:jackson-databind:2.22.1")
     api("org.slf4j:slf4j-api:2.0.18")
     implementation(kotlin("reflect"))
     testImplementation(kotlin("test"))
