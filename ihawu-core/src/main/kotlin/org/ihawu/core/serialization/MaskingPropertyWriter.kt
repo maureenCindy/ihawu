@@ -16,9 +16,12 @@ import org.slf4j.LoggerFactory
  * For each field of an [org.ihawu.core.annotation.IhawuResource] bean, the resolved policy decides
  * the output:
  * - no policy — the field serializes normally;
- * - [MaskingStrategy.HIDE] — the field is omitted entirely;
- * - [MaskingStrategy.REDACT] — the value is replaced with [FieldPolicy.placeholder], falling back to
- *   [MaskingStrategy.defaultValue]. Note this writes a string placeholder even for non-string fields.
+ * - [MaskingStrategy.HIDE] — the field is omitted, but only where the schema permits absence
+ *   (nullable/optional). On a required field it fails closed (omitted + logged); the loud startup
+ *   rejection lives in the resolver/starter validation.
+ * - [MaskingStrategy.REDACT] — a String field is replaced with [FieldPolicy.placeholder] (falling back
+ *   to [MaskingStrategy.defaultPlaceholder]); a nullable non-String field masks to JSON null; a
+ *   non-nullable non-String field has no contract-safe value and fails closed.
  *
  * Policies are resolved once per (serialization call, resource) and memoized in the call-scoped
  * [SerializerProvider] attributes, so a response containing many instances of the same resource
@@ -26,23 +29,24 @@ import org.slf4j.LoggerFactory
  * omitted, so the resource serializes as an empty object rather than leaking unmasked data. See
  * `docs/adr/0001-serialization-context-passing.md`.
  *
- * The writer also fails closed on *errors*, never leaking the protected payload:
- * - if [resolver] throws (a misconfiguration or policy-store outage), the failure is memoized and
- *   every field of the resource is omitted, so it serializes as an empty object. This holds for
- *   nested resources and collection items, since each resource resolves independently;
- * - if computing a [MaskingStrategy.REDACT] placeholder throws, that single field is omitted.
+ * The writer also fails closed on *errors*, never leaking the protected payload: if [resolver] throws
+ * (a misconfiguration or policy-store outage), the failure is memoized and every field of the resource
+ * is omitted, so it serializes as an empty object. This holds for nested resources and collection
+ * items, since each resource resolves independently.
  *
- * Both failures are logged for diagnosis with the resource (and field) name only — never the
- * protected value.
+ * Failures are logged for diagnosis with the resource (and field) name only — never the protected value.
  *
  * @param base The original writer this delegates to for unmasked output.
  * @property resolver Resolves the field policies for the [resource].
  * @property resource The [org.ihawu.core.annotation.IhawuResource] name whose policies apply.
+ * @property capability How this field may be masked, derived once per type from its declared type and
+ *   Kotlin nullability.
  */
 internal class MaskingPropertyWriter(
     base: BeanPropertyWriter,
     private val resolver: ResourcePolicyResolver,
     private val resource: String,
+    private val capability: MaskingCapability,
 ) : BeanPropertyWriter(base) {
     override fun serializeAsField(
         bean: Any,
@@ -53,17 +57,21 @@ internal class MaskingPropertyWriter(
         val policy = policies[name]
         when (policy?.strategy) {
             null -> super.serializeAsField(bean, gen, prov) // not in policy -> normal output
-            MaskingStrategy.HIDE -> Unit // omit entirely
+
+            MaskingStrategy.HIDE ->
+                if (capability.omittable) {
+                    Unit // nullable/optional -> omitting is contract-safe
+                } else {
+                    // required field: omitting breaks the schema -> fail-closed + log (hard-fail is at startup)
+                    log.error("Ihawu HIDE on required field '{}.{}'; omitting (fail-closed)", resource, name)
+                }
+
             MaskingStrategy.REDACT -> {
-                val value =
-                    try {
-                        policy.placeholder ?: policy.strategy.defaultValue?.invoke() ?: ""
-                    } catch (e: Exception) {
-                        log.error("Ihawu redaction failed for '{}.{}'; omitting field", resource, name, e)
-                        return // fail-closed: omit field
-                    }
-                gen.writeFieldName(name)
-                gen.writeString(value)
+                val placeholder = policy.placeholder ?: policy.strategy.defaultPlaceholder ?: ""
+                if (!capability.writeRedacted(gen, name, placeholder)) {
+                    // non-nullable non-String -> no contract-safe value -> fail-closed + log
+                    log.error("Ihawu REDACT on non-nullable non-String '{}.{}'; omitting (fail-closed)", resource, name)
+                }
             }
         }
     }

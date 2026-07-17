@@ -13,14 +13,14 @@ import org.ihawu.core.serialization.IhawuSerialization
 @IhawuResource("employee.address")
 data class Address(
     val city: String,
-    val postalCode: String,
+    val postalCode: String?, // nullable so HIDE can omit it and stay contract-valid
 )
 
 @IhawuResource("employee.profile")
 data class EmployeeProfile(
     val name: String,
-    val ssn: String,
-    val salary: Int,
+    val ssn: String?, // nullable so HIDE can omit it
+    val salary: Int?, // nullable non-String so REDACT masks it to JSON null
     val address: Address,
 )
 
@@ -35,8 +35,9 @@ class StaticPolicyResolver(
 }
 
 fun maskEmployeeProfile() {
-    // HIDE omits a field, REDACT replaces its value, unlisted fields pass through, and
-    // nested @IhawuResource objects are masked by their own policy.
+    // HIDE omits a field, REDACT replaces its value (a placeholder for String fields, JSON null for
+    // other types), unlisted fields pass through, and nested @IhawuResource objects are masked by
+    // their own policy. Masked fields are declared nullable so the output stays type-valid.
 
     // A resolver supplies the field policies for each resource.
     val resolver =
@@ -45,7 +46,7 @@ fun maskEmployeeProfile() {
                 "employee.profile" to
                     listOf(
                         FieldPolicy("ssn", MaskingStrategy.HIDE),
-                        FieldPolicy("salary", MaskingStrategy.REDACT, placeholder = "REDACTED"),
+                        FieldPolicy("salary", MaskingStrategy.REDACT),
                     ),
                 "employee.address" to
                     listOf(FieldPolicy("postalCode", MaskingStrategy.HIDE)),
@@ -73,7 +74,7 @@ fun maskEmployeeProfile() {
 
     val tree = mapper.readTree(json)
     check(!tree.has("ssn")) // HIDE -> field omitted
-    check(tree["salary"].asText() == "REDACTED") // REDACT -> placeholder
+    check(tree["salary"].isNull) // REDACT on a non-String -> JSON null
     check(tree["name"].asText() == "Jane Doe") // not in policy -> unchanged
     check(!tree["address"].has("postalCode")) // nested resource masked by its own policy
     check(tree["address"]["city"].asText() == "Harare")
