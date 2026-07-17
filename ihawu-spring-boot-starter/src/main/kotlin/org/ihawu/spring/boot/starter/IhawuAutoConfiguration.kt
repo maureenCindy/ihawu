@@ -4,6 +4,7 @@ import org.ihawu.spring.boot.starter.configuration.IhawuJacksonObjectMapperConfi
 import org.ihawu.spring.boot.starter.configuration.IhawuProperties
 import org.ihawu.spring.boot.starter.configuration.IhawuSecurityConfig
 import org.ihawu.spring.boot.starter.configuration.IhawuWebConfig
+import org.ihawu.spring.boot.starter.configuration.MaskingContractValidationConfig
 import org.ihawu.spring.boot.starter.configuration.ResourcePolicyConfig
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -23,6 +24,7 @@ import org.springframework.context.annotation.Import
         IhawuJacksonObjectMapperConfig::class,
         IhawuWebConfig::class,
         ResourcePolicyConfig::class,
+        MaskingContractValidationConfig::class,
     ],
 )
 @EnableConfigurationProperties(IhawuProperties::class)
