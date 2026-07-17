@@ -13,3 +13,4 @@ supersedes the old one.
 | [0002](0002-request-scoped-policy-caching.md) | How policy resolution is cached for the request lifecycle | Accepted |
 | [0003](0003-default-visibility-on-missing-policy.md) | Default visibility when no policy matches | Accepted |
 | [0004](0004-static-policy-configuration.md) | Supplying static masking policy from configuration | Accepted |
+| [0005](0005-hard-fail-on-unenforceable-masking-policy.md) | Hard-fail on an unenforceable masking policy | Accepted |

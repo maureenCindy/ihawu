@@ -48,11 +48,10 @@ that has an `IhawuPrincipal` attached. That boundary defines the scope of this p
 - **Unconfigured fields serializing normally.** Masking is a denylist: a field no policy restricts is public by
   design. See [How Ihawu Works](https://ihawu.org/concepts/how-it-works/).
 - **An empty `{}` response after a policy-resolution failure.** That is the intended fail-closed behaviour.
-- **Known type-contract bugs**, tracked publicly — please do not spend a private report on these:
-  - `REDACT` writes a string placeholder into a non-string field ([#67](https://github.com/maureenCindy/ihawu/issues/67)).
-  - `HIDE` omits a non-nullable field, producing JSON that will not deserialize ([#68](https://github.com/maureenCindy/ihawu/issues/68)).
-
-  Neither leaks a protected value; both are correctness defects and are being fixed in the open.
+- **An application that fails to start on an unenforceable masking policy.** A policy that cannot satisfy
+  its field's declared type (`REDACT` on a non-nullable non-`String`, `HIDE` on a non-nullable field, or a
+  field the resource does not have) fails the context at startup by design — a config error surfaced early,
+  not a vulnerability ([ADR 0005](docs/adr/0005-hard-fail-on-unenforceable-masking-policy.md)).
 
 ## Disclosure Policy
 

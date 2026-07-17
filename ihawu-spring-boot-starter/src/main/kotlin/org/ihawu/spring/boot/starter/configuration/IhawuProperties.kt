@@ -23,6 +23,21 @@ class IhawuProperties {
     var policies: List<PolicyProperties> = emptyList()
 
     /**
+     * Whether to check, at startup, that every configured masking policy can satisfy its resource's
+     * declared type contract — failing the application context (see ADR 0005) on a policy that would
+     * emit schema-invalid output (e.g. `REDACT` on a non-nullable `Int`, `HIDE` on a non-nullable
+     * field). Defaults to true; set false to defer such a policy to the runtime fail-closed backstop.
+     */
+    var validateResourceContract: Boolean = true
+
+    /**
+     * Packages to scan for [org.ihawu.core.annotation.IhawuResource] types during startup contract
+     * validation. Defaults to empty — the application's auto-configuration base packages are used. Set
+     * this when resources live outside those packages.
+     */
+    var resourceBasePackages: List<String> = emptyList()
+
+    /**
      * The config representation of a single field's masking rule, bound from
      * `ihawu.policies[].roles.<role>[]` and mapped to a core [org.ihawu.core.policy.FieldPolicy] by the default provider.
      *

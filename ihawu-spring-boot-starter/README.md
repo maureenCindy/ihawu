@@ -95,14 +95,21 @@ ihawu:
 
 - **`strategy`** is `HIDE` (drops the field) or `REDACT` (replaces its value). Omitting it defaults to
   the stricter `HIDE`.
-- **`placeholder`** applies only to `REDACT`; when omitted, the strategy's own default value is used.
+- **`placeholder`** applies to `REDACT` on a `String` field; when omitted, the strategy default is used.
+  `REDACT` on a nullable non-`String` field masks to `null` (the placeholder does not apply), and `HIDE`
+  needs a nullable/optional field — masking must satisfy the field's declared type.
 - Policies **union across the caller's roles**; when two roles mask the same field, the stricter
   strategy wins.
 - A field with **no matching rule stays visible** — masking is a denylist, so unconfigured fields are
   public by design. (Missing *identity* still fails closed; see the [ADRs](../docs/adr).)
 
 Configuration is validated **eagerly at startup**: duplicate `resource` keys and blank `field` names
-fail the application context rather than silently mis-masking at request time.
+fail the application context, and each policy is checked against its resource's declared type — a policy
+that cannot be honoured (`REDACT` on a non-nullable non-`String` field, `HIDE` on a non-nullable field,
+or a `field` the resource does not have) fails the context, naming the resource and field, rather than
+silently mis-masking at request time ([ADR 0005](../docs/adr/0005-hard-fail-on-unenforceable-masking-policy.md)).
+Turn the contract check off with `ihawu.validate-resource-contract: false`; if your `@IhawuResource`
+types live outside the auto-configuration packages, list them under `ihawu.resource-base-packages`.
 
 ### Dynamic rules
 
