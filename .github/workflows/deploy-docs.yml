@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    # A release tag redeploys the docs so the version label matches the just-published artifact.
+    # Without this, docs deploy only on a main push, which a tag-only release does not produce —
+    # leaving the site on the previous version until the next unrelated push.
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
 
 permissions:
   contents: read
