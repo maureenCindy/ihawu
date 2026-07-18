@@ -148,8 +148,27 @@ resource degrading to `{}`, an outage behind a `200`. (Configured policies that 
 rejected at [startup](#static-masking-rules-ihawupolicies) already; runtime ones only come from a dynamic
 resolver.)
 
-A Micrometer counter (`ihawu.masking.failures`) and an optional `ihawu.on-policy-failure=fail-request`
-mode (resolver outage → `5xx`) are planned for the serialization-neutral core (#89).
+### Metrics
+
+When Micrometer is on the classpath and a `MeterRegistry` bean exists (e.g. with Spring Boot Actuator),
+the starter counts every fail-closed drop as **`ihawu.masking.failures`**, tagged `resource` and `reason`
+(`NO_PRINCIPAL`, `RESOLVER_ERROR`, `HIDE_NON_NULLABLE`, `REDACT_UNSAFE`) — never the protected value.
+**Alert on `reason=RESOLVER_ERROR`.** The metric costs nothing when Micrometer is absent, and logging still
+happens either way; define your own `MaskingFailureSink` bean to replace both.
+
+### Failing the request instead of masking
+
+By default a resolver outage masks to `{}` behind a `200` (`ihawu.on-policy-failure=mask-all`). Set:
+
+```yaml
+ihawu:
+  on-policy-failure: fail-request
+```
+
+and a resolver failure instead throws, surfacing as a `5xx` so the outage is not silent (only the
+resolver-error path — a missing principal still masks fail-closed). Best-effort: a resource nested past the
+point the response is already committed can't become a clean `5xx` (see
+[ADR 0011](../docs/adr/0011-configurable-fail-request-on-resolver-error.md)).
 
 ---
 

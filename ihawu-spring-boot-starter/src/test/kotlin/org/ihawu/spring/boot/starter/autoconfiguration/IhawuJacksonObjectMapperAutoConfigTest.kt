@@ -6,9 +6,12 @@ import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicyResolver
 import org.ihawu.jackson.IhawuModule
 import org.ihawu.spring.boot.starter.configuration.IhawuJacksonObjectMapperConfig
+import org.ihawu.spring.boot.starter.configuration.IhawuProperties
 import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
+import org.springframework.context.annotation.Configuration
 import kotlin.test.Test
 
 class IhawuJacksonObjectMapperAutoConfigTest {
@@ -22,10 +25,12 @@ class IhawuJacksonObjectMapperAutoConfigTest {
 
     private val nonWebAppRunner =
         ApplicationContextRunner()
+            .withUserConfiguration(PropertiesConfig::class.java)
             .withBean(ResourcePolicyResolver::class.java, { stubResolver })
             .withConfiguration(AutoConfigurations.of(IhawuJacksonObjectMapperConfig::class.java))
     private val webAppRunner =
         WebApplicationContextRunner()
+            .withUserConfiguration(PropertiesConfig::class.java)
             .withBean(ResourcePolicyResolver::class.java, { stubResolver })
             .withConfiguration(AutoConfigurations.of(IhawuJacksonObjectMapperConfig::class.java))
 
@@ -57,4 +62,8 @@ class IhawuJacksonObjectMapperAutoConfigTest {
                 assertThat(context.getBean(IhawuModule::class.java)).isSameAs(custom)
             }
     }
+
+    @Configuration(proxyBeanMethods = false)
+    @EnableConfigurationProperties(IhawuProperties::class)
+    class PropertiesConfig
 }

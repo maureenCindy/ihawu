@@ -1,6 +1,7 @@
 package org.ihawu.spring.boot.starter.configuration
 
 import org.ihawu.core.masking.MaskingStrategy
+import org.ihawu.core.masking.ResolverErrorMode
 import org.springframework.boot.context.properties.ConfigurationProperties
 
 /**
@@ -36,6 +37,16 @@ class IhawuProperties {
      * this when resources live outside those packages.
      */
     var resourceBasePackages: List<String> = emptyList()
+
+    /**
+     * How a **policy-resolver failure** (a policy-store outage or misconfiguration) is handled, bound from
+     * `ihawu.on-policy-failure` (`mask-all` / `fail-request`). Defaults to
+     * [ResolverErrorMode.MASK_ALL] — mask the whole resource fail-closed and return 200.
+     * [ResolverErrorMode.FAIL_REQUEST] instead lets the error surface (a `5xx`), so an outage is not
+     * silent — see ADR 0011 for the committed-response caveat. Only the resolver-error path is affected;
+     * a missing principal always masks fail-closed.
+     */
+    var onPolicyFailure: ResolverErrorMode = ResolverErrorMode.MASK_ALL
 
     /**
      * The config representation of a single field's masking rule, bound from

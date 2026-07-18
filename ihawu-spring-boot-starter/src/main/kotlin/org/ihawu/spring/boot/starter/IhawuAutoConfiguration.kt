@@ -1,6 +1,7 @@
 package org.ihawu.spring.boot.starter
 
 import org.ihawu.spring.boot.starter.configuration.IhawuJacksonObjectMapperConfig
+import org.ihawu.spring.boot.starter.configuration.IhawuObservabilityConfig
 import org.ihawu.spring.boot.starter.configuration.IhawuProperties
 import org.ihawu.spring.boot.starter.configuration.IhawuSecurityConfig
 import org.ihawu.spring.boot.starter.configuration.IhawuWebConfig
@@ -22,6 +23,7 @@ import org.springframework.context.annotation.Import
     value = [
         IhawuSecurityConfig::class,
         IhawuJacksonObjectMapperConfig::class,
+        IhawuObservabilityConfig::class,
         IhawuWebConfig::class,
         ResourcePolicyConfig::class,
         MaskingContractValidationConfig::class,

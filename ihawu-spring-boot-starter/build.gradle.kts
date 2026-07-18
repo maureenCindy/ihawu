@@ -40,6 +40,8 @@ kapt {
 dependencies {
     compileOnly("org.springframework.security:spring-security-core")
     compileOnly("org.springframework.boot:spring-boot-starter-web")
+    // Optional: the Micrometer failure-metrics sink activates only when a MeterRegistry is present.
+    compileOnly("io.micrometer:micrometer-core")
 
     // api, not implementation: ihawu-jackson — and the core types it re-exports (@IhawuResource,
     // FieldPolicy, MaskingStrategy) — are part of the starter's public surface, so consumers compile
@@ -53,6 +55,7 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("org.springframework.boot:spring-boot-starter-security")
+    testImplementation("io.micrometer:micrometer-core")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
