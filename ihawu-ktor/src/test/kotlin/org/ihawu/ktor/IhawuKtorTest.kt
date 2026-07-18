@@ -31,9 +31,11 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.ihawu.core.annotation.IhawuResource
 import org.ihawu.core.masking.DefaultMaskingEngine
 import org.ihawu.core.masking.MaskingStrategy
+import org.ihawu.core.masking.ResolverErrorMode
 import org.ihawu.core.policy.FieldPolicy
 import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicy
+import org.ihawu.core.policy.ResourcePolicyResolver
 import org.ihawu.core.policy.RoleBasedResourcePolicyResolver
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -223,6 +225,42 @@ class IhawuKtorTest {
 
             val anon = client.get("/employee").bodyAsText()
             assertEquals("{}", anon.filterNot { it.isWhitespace() })
+        }
+
+    private val throwingResolver =
+        object : ResourcePolicyResolver {
+            override fun resolve(
+                principal: IhawuPrincipal,
+                resource: String,
+            ): List<FieldPolicy> = throw IllegalStateException("policy store down")
+        }
+
+    @Test
+    fun failRequestModeSurfacesAResolverOutageAsA500() =
+        testApplication {
+            application {
+                installByRoleHeader {
+                    policyResolver(throwingResolver)
+                    onPolicyFailure = ResolverErrorMode.FAIL_REQUEST
+                }
+            }
+
+            val response = client.get("/employee") { header("X-Role", "MANAGER") }
+
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
+        }
+
+    @Test
+    fun defaultMaskAllModeMasksAResolverOutageToEmptyObjectAt200() =
+        testApplication {
+            application {
+                installByRoleHeader { policyResolver(throwingResolver) }
+            }
+
+            val response = client.get("/employee") { header("X-Role", "MANAGER") }
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("{}", response.bodyAsText().filterNot { it.isWhitespace() })
         }
 
     @Test

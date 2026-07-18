@@ -13,6 +13,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.ihawu.core.masking.DefaultMaskingEngine
 import org.ihawu.core.masking.MaskingFailureSink
+import org.ihawu.core.masking.ResolverErrorMode
 import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicy
 import org.ihawu.core.policy.ResourcePolicyResolver
@@ -39,6 +40,14 @@ class IhawuKtorConfig {
 
     /** Notified on each fail-closed drop; defaults to a no-op so the adapter needs no logger. */
     var onFailClosed: MaskingFailureSink = MaskingFailureSink { _, _, _, _ -> }
+
+    /**
+     * How a policy-resolver failure (a policy-store outage or misconfiguration) is handled. Defaults to
+     * [ResolverErrorMode.MASK_ALL] — mask the whole resource fail-closed (`{}`, still `200`).
+     * [ResolverErrorMode.FAIL_REQUEST] instead lets the error surface as a `500`, so an outage is not
+     * silent (only the resolver-error path; a missing principal still masks). See ADR 0011.
+     */
+    var onPolicyFailure: ResolverErrorMode = ResolverErrorMode.MASK_ALL
 
     internal var policyResolver: ResourcePolicyResolver? = null
     internal val resourceEntries = mutableListOf<Pair<KSerializer<*>, String>>()
@@ -83,7 +92,11 @@ val IhawuKtor =
         val json = pluginConfig.json
         val resolvePrincipal = pluginConfig.resolvePrincipal
         val engine =
-            DefaultMaskingEngine(pluginConfig.policyResolver ?: RoleBasedResourcePolicyResolver(emptyList()), pluginConfig.onFailClosed)
+            DefaultMaskingEngine(
+                pluginConfig.policyResolver ?: RoleBasedResourcePolicyResolver(emptyList()),
+                pluginConfig.onFailClosed,
+                pluginConfig.onPolicyFailure,
+            )
         val registry = maskingRegistry(*pluginConfig.resourceEntries.toTypedArray())
         val converter = MaskingContentConverter(json, engine, registry)
 

@@ -66,9 +66,10 @@ callers that must always return a well-formed body.
 | Observability | Independent of the mode: the sink fires on every fail-closed path (0.3.0), including before a `fail-request` throw. |
 | Neutral SPI | The mode lives on `DefaultMaskingEngine`; each adapter decides how a thrown `MaskingResolverException` surfaces. |
 | Spring Boot | `ihawu.on-policy-failure: mask-all \| fail-request`; a thrown exception maps to `5xx` when the response is not yet committed. |
-| Ktor / other sinks | The engine mode exists for them, but exposing it on those adapters is a follow-up (#89 is core + starter). |
+| Ktor | Exposed via `IhawuKtorConfig.onPolicyFailure` (#108). The thrown `MaskingResolverException` propagates out of `MaskingContentConverter.serialize` and Ktor's default handling turns it into a `500` (verified pre-commit); apps wanting a custom body add `StatusPages`. Failure metrics use the same `ihawu.masking.failures{resource,reason}` via `MicrometerMaskingFailureSink`. |
+| Other sinks (Kafka, CSV, …) | The engine mode exists for them; surfacing it is per-sink and remains a follow-up. |
 | `fail-request` completeness | Best-effort; the committed-response caveat above is documented, not eliminated. |
 
 ### Out of scope (follow-ups)
-- Exposing `fail-request` on the Ktor adapter (and a Micrometer-equivalent there).
+- ~~Exposing `fail-request` on the Ktor adapter (and a Micrometer-equivalent there).~~ Done in #108.
 - Pre-serialization resolution to make `fail-request` clean for deeply-nested resources.

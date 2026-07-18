@@ -12,6 +12,7 @@ plugins {
 // The Ktor server adapter for Ihawu masking. Ktor server plugins are JVM-only, so this is a plain
 // kotlin("jvm") module built on the multiplatform kotlinx backend (ADR 0009).
 val ktorVersion = "3.2.3"
+val micrometerVersion = "1.13.6"
 
 dependencies {
     api(project(":ihawu-kotlinx"))
@@ -20,9 +21,13 @@ dependencies {
     api("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     api("io.ktor:ktor-server-auth:$ktorVersion")
 
+    // Optional: the Micrometer failure-metrics sink is only referenced when the app supplies a registry.
+    compileOnly("io.micrometer:micrometer-core:$micrometerVersion")
+
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    testImplementation("io.micrometer:micrometer-core:$micrometerVersion")
 }
 
 mavenPublishing {
