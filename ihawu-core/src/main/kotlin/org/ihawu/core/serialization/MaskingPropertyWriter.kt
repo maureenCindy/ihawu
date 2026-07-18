@@ -3,48 +3,34 @@ package org.ihawu.core.serialization
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter
-import org.ihawu.core.masking.MaskingStrategy
-import org.ihawu.core.policy.FieldPolicy
+import org.ihawu.core.masking.MaskingCapability
+import org.ihawu.core.masking.MaskingContext
+import org.ihawu.core.masking.MaskingDecision
+import org.ihawu.core.masking.MaskingEngine
 import org.ihawu.core.policy.IhawuPrincipal
-import org.ihawu.core.policy.ResourcePolicyResolver
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
- * A [BeanPropertyWriter] that enforces a single field's [FieldPolicy] at serialization time.
+ * A Jackson [BeanPropertyWriter] that enforces one field's masking decision at serialization time.
  *
- * For each field of an [org.ihawu.core.annotation.IhawuResource] bean, the resolved policy decides
- * the output:
- * - no policy — the field serializes normally;
- * - [MaskingStrategy.HIDE] — the field is omitted, but only where the schema permits absence
- *   (nullable/optional). On a required field it fails closed (omitted + logged); the loud startup
- *   rejection lives in the resolver/starter validation.
- * - [MaskingStrategy.REDACT] — a String field is replaced with [FieldPolicy.placeholder] (falling back
- *   to [MaskingStrategy.defaultPlaceholder]); a nullable non-String field masks to JSON null; a
- *   non-nullable non-String field has no contract-safe value and fails closed.
+ * It is the *write* half of the split: the serialization-neutral [MaskingEngine] decides what to do
+ * with the field (policy resolution, per-call memoization, fail-closed behaviour, the type contract);
+ * this writer only executes the resulting [MaskingDecision] against Jackson —
+ * [MaskingDecision.Pass] delegates to normal output, [MaskingDecision.Omit] drops the field,
+ * [MaskingDecision.WriteString]/[MaskingDecision.WriteNull] write the masked value. Fail-closed
+ * diagnostics are surfaced by the engine through its failure sink, not here.
  *
- * Policies are resolved once per (serialization call, resource) and memoized in the call-scoped
- * [SerializerProvider] attributes, so a response containing many instances of the same resource
- * resolves only once. When no [IhawuPrincipal] is present the writer fails closed: every field is
- * omitted, so the resource serializes as an empty object rather than leaking unmasked data. See
- * `docs/adr/0001-serialization-context-passing.md`.
- *
- * The writer also fails closed on *errors*, never leaking the protected payload: if [resolver] throws
- * (a misconfiguration or policy-store outage), the failure is memoized and every field of the resource
- * is omitted, so it serializes as an empty object. This holds for nested resources and collection
- * items, since each resource resolves independently.
- *
- * Failures are logged for diagnosis with the resource (and field) name only — never the protected value.
+ * The per-call context (principal + policy memoization) rides on the [SerializerProvider]'s attributes
+ * via [JacksonMaskingContext], scoping it to a single write call. See
+ * `docs/adr/0001-serialization-context-passing.md` and ADR 0006.
  *
  * @param base The original writer this delegates to for unmasked output.
- * @property resolver Resolves the field policies for the [resource].
+ * @property engine Decides each field's [MaskingDecision].
  * @property resource The [org.ihawu.core.annotation.IhawuResource] name whose policies apply.
- * @property capability How this field may be masked, derived once per type from its declared type and
- *   Kotlin nullability.
+ * @property capability How this field may be masked, derived once per type from its declared type.
  */
 internal class MaskingPropertyWriter(
     base: BeanPropertyWriter,
-    private val resolver: ResourcePolicyResolver,
+    private val engine: MaskingEngine,
     private val resource: String,
     private val capability: MaskingCapability,
 ) : BeanPropertyWriter(base) {
@@ -53,62 +39,34 @@ internal class MaskingPropertyWriter(
         gen: JsonGenerator,
         prov: SerializerProvider,
     ) {
-        val policies = policies(prov) ?: return // fail-closed: omit field -> resource becomes {}
-        val policy = policies[name]
-        when (policy?.strategy) {
-            null -> super.serializeAsField(bean, gen, prov) // not in policy -> normal output
-
-            MaskingStrategy.HIDE ->
-                if (capability.omittable) {
-                    Unit // nullable/optional -> omitting is contract-safe
-                } else {
-                    // required field: omitting breaks the schema -> fail-closed + log (hard-fail is at startup)
-                    log.error("Ihawu HIDE on required field '{}.{}'; omitting (fail-closed)", resource, name)
-                }
-
-            MaskingStrategy.REDACT -> {
-                val placeholder = policy.placeholder ?: policy.strategy.defaultPlaceholder ?: ""
-                if (!capability.writeRedacted(gen, name, placeholder)) {
-                    // non-nullable non-String -> no contract-safe value -> fail-closed + log
-                    log.error("Ihawu REDACT on non-nullable non-String '{}.{}'; omitting (fail-closed)", resource, name)
-                }
+        when (val decision = engine.decide(resource, name, capability, JacksonMaskingContext(prov))) {
+            MaskingDecision.Pass -> super.serializeAsField(bean, gen, prov) // not in policy -> normal output
+            is MaskingDecision.Omit -> Unit // field omitted (fail-closed reasons are surfaced by the engine)
+            is MaskingDecision.WriteString -> {
+                gen.writeFieldName(name)
+                gen.writeString(decision.value)
+            }
+            MaskingDecision.WriteNull -> {
+                gen.writeFieldName(name)
+                gen.writeNull()
             }
         }
     }
+}
 
-    /** Resolve once per (call, resource), memoized in the call-scoped attributes. null => mask everything. */
-    private fun policies(prov: SerializerProvider): Map<String, FieldPolicy>? {
-        val key = "org.ihawu.resolved:$resource"
-        prov.getAttribute(key)?.let { return if (it === MASK_ALL) null else asMap(it) }
-
-        val principal = prov.getAttribute(IhawuSerialization.PRINCIPAL) as? IhawuPrincipal
-        if (principal == null) {
-            log.warn(
-                "No IhawuPrincipal attached to serialization call, serialization failing closed for resource '{}'. " +
-                    "Attach one via ObjectWriter.withAttribute(IhawuSerialization.PRINCIPAL, principal).",
-                resource,
-            )
-            prov.setAttribute(key, MASK_ALL)
-            return null
-        }
-        val map =
-            try {
-                resolver.resolve(principal, resource).associateBy { it.field }
-            } catch (ex: Exception) {
-                log.error("Ihawu masking failed for resource '{}', serialization failing closed", resource, ex)
-                prov.setAttribute(key, MASK_ALL)
-                return null
-            }
-        prov.setAttribute(key, map)
-        return map
-    }
+/** Adapts a Jackson [SerializerProvider] to the neutral [MaskingContext] for one write call. */
+private class JacksonMaskingContext(
+    private val prov: SerializerProvider,
+) : MaskingContext {
+    override val principal: IhawuPrincipal?
+        get() = prov.getAttribute(IhawuSerialization.PRINCIPAL) as? IhawuPrincipal
 
     @Suppress("UNCHECKED_CAST")
-    private fun asMap(value: Any): Map<String, FieldPolicy> = value as Map<String, FieldPolicy>
-
-    private companion object {
-        /** Sentinel memoized when no principal is present, so we don't re-check per property. */
-        val MASK_ALL = Any()
-        val log: Logger = LoggerFactory.getLogger(MaskingPropertyWriter::class.java)
+    override fun <T : Any> memoize(
+        key: String,
+        compute: () -> T,
+    ): T {
+        (prov.getAttribute(key) as? T)?.let { return it }
+        return compute().also { prov.setAttribute(key, it) }
     }
 }
