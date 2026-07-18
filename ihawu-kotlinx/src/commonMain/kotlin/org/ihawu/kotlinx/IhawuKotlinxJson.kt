@@ -3,6 +3,8 @@ package org.ihawu.kotlinx
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
 import org.ihawu.core.masking.MaskingEngine
 import org.ihawu.core.policy.IhawuPrincipal
 
@@ -23,13 +25,18 @@ fun maskingRegistry(vararg entries: Pair<KSerializer<*>, String>): Map<String, S
  * `configuration.classDiscriminator` (default `"type"`). `Json.configuration.classDiscriminator` is a
  * stable (non-experimental) API in kotlinx-serialization 1.8.1, so a call site (e.g. Ktor) can pass it
  * without any opt-in.
+ *
+ * [serializersModule] resolves OPEN (non-sealed abstract/interface) `@IhawuResource` subtypes (spike #104):
+ * pass the encoding `Json`'s `serializersModule` so registered subtypes can be masked. Defaults to an empty
+ * module (sealed masking and non-polymorphic masking need no module).
  */
 fun <T> maskingSerializer(
     delegate: KSerializer<T>,
     engine: MaskingEngine,
     registry: Map<String, String>,
     classDiscriminator: String = "type",
-): KSerializer<T> = MaskingJsonTransformer(delegate, engine, registry, classDiscriminator)
+    serializersModule: SerializersModule = EmptySerializersModule(),
+): KSerializer<T> = MaskingJsonTransformer(delegate, engine, registry, classDiscriminator, serializersModule)
 
 /** Encodes masked values with kotlinx.serialization, supplying the caller per encode. */
 object IhawuKotlinxJson {
