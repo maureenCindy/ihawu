@@ -23,6 +23,8 @@ dependencies {
     implementation(project(":ihawu-spring-boot-starter"))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    // Brings Micrometer + a MeterRegistry, so Ihawu's ihawu.masking.failures metric activates (0.4.0).
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

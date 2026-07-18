@@ -123,3 +123,13 @@ sharing their assertions via `AbstractEmployeeMaskingTest` so both policy source
 ```bash
 ./gradlew :samples:spring-boot-sample:test
 ```
+
+## Observability (0.4.0)
+
+`spring-boot-starter-actuator` is on the classpath, so a `MeterRegistry` is present and Ihawu counts every
+fail-closed drop as `ihawu.masking.failures{resource,reason}` — **alert on `reason=RESOLVER_ERROR`** (a
+policy-store outage degrading every response to `{}` behind a `200`). By default that outage stays a
+`200`; set `ihawu.on-policy-failure=fail-request` to surface it as a `500` instead (ADR 0011).
+
+`ObservabilityTest` demonstrates both against a stand-in "policy store is down" resolver: the failure
+counter increments (mask-all, `200`), and under `fail-request` the same outage returns a `500`.
