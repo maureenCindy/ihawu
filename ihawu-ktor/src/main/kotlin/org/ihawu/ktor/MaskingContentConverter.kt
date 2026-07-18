@@ -50,7 +50,8 @@ class MaskingContentConverter(
         val base = json.serializersModule.serializer(kotlinType)
         // Thread this Json's discriminator key so sealed @IhawuResource subtypes mask (ADR 0010); relying
         // on the "type" default would silently fail open if the app configured a custom classDiscriminator.
-        val masking = maskingSerializer(base, engine, registry, json.configuration.classDiscriminator)
+        // Thread the module too so OPEN (non-sealed) subtypes resolve via getPolymorphic (ADR 0010).
+        val masking = maskingSerializer(base, engine, registry, json.configuration.classDiscriminator, json.serializersModule)
         return TextContent(json.encodeToString(masking, value), contentType.withCharset(charset))
     }
 

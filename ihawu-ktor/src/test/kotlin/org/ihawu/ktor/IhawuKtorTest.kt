@@ -28,6 +28,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 import org.ihawu.core.annotation.IhawuResource
 import org.ihawu.core.masking.DefaultMaskingEngine
 import org.ihawu.core.masking.MaskingStrategy
@@ -82,6 +85,25 @@ private val documentPolicy =
     ResourcePolicy(
         "document",
         mapOf("MANAGER" to listOf(FieldPolicy("body", MaskingStrategy.REDACT, "***"))),
+    )
+
+/** An OPEN (non-sealed abstract) `@IhawuResource`: proves the adapter masks it via the threaded module (ADR 0010 / #104). */
+@Serializable
+private abstract class Record {
+    abstract val secret: String
+}
+
+@Serializable
+@SerialName("memo")
+@IhawuResource("memo")
+private data class Memo(
+    override val secret: String,
+) : Record()
+
+private val memoPolicy =
+    ResourcePolicy(
+        "memo",
+        mapOf("MANAGER" to listOf(FieldPolicy("secret", MaskingStrategy.REDACT, "***"))),
     )
 
 /** Resolves the caller from an `X-Role` header — a test stand-in for a real `Authentication` bridge. */
@@ -261,6 +283,30 @@ class IhawuKtorTest {
 
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals("{}", response.bodyAsText().filterNot { it.isWhitespace() })
+        }
+
+    @Test
+    fun openPolymorphicSubtypeMasksThroughTheThreadedModule() =
+        testApplication {
+            // The app's Json registers the OPEN subtype on its module; the converter threads that module so
+            // getPolymorphic can resolve Memo and mask it (ADR 0010 / #104).
+            val moduleJson = Json { serializersModule = SerializersModule { polymorphic(Record::class) { subclass(Memo::class) } } }
+            application {
+                install(IhawuKtor) {
+                    json = moduleJson
+                    resolvePrincipal = { call ->
+                        if (call.request.headers["X-Role"] == "MANAGER") IhawuPrincipal("u1", setOf("MANAGER"), emptyMap()) else null
+                    }
+                    policies(memoPolicy)
+                    resources(Memo.serializer() to "memo")
+                }
+                routing { get("/memo") { call.respond<Record>(Memo("top-secret")) } }
+            }
+
+            val json = parse(client.get("/memo") { header("X-Role", "MANAGER") }.bodyAsText())
+
+            assertEquals("memo", json["type"]?.jsonPrimitive?.content) // discriminator preserved
+            assertEquals("***", json["secret"]?.jsonPrimitive?.content) // OPEN subtype masked
         }
 
     @Test
