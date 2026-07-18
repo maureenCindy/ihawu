@@ -5,6 +5,7 @@ import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicyResolver
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -153,6 +154,33 @@ class DefaultMaskingEngineTest {
         val omit = assertIs<MaskingDecision.Omit>(decision)
         assertEquals(FailReason.RESOLVER_ERROR, omit.reason)
         assertSame(boom, sink.events.single().cause)
+    }
+
+    @Test
+    fun `fail-request mode throws on resolver error after notifying the sink`() {
+        val boom = IllegalStateException("policy store down")
+        val engine = DefaultMaskingEngine(StubResolver(fail = boom), sink, ResolverErrorMode.FAIL_REQUEST)
+
+        val thrown =
+            assertFailsWith<MaskingResolverException> {
+                engine.decide("employee", "ssn", MaskingCapability.TEXTUAL_REQUIRED, FakeContext(principal))
+            }
+
+        assertEquals("employee", thrown.resource)
+        assertSame(boom, thrown.cause)
+        // Strictly more observable than mask-all: the sink fired before the throw.
+        assertEquals(RecordingSink.Event("employee", null, FailReason.RESOLVER_ERROR, boom), sink.events.single())
+    }
+
+    @Test
+    fun `fail-request mode leaves the missing-principal path masking, not throwing`() {
+        val engine = DefaultMaskingEngine(StubResolver(), sink, ResolverErrorMode.FAIL_REQUEST)
+
+        // A missing caller is a normal authorization state, not an outage: still masks fail-closed.
+        val decision = engine.decide("employee", "ssn", MaskingCapability.TEXTUAL_REQUIRED, FakeContext(null))
+
+        assertEquals(MaskingDecision.Omit(FailReason.NO_PRINCIPAL), decision)
+        assertEquals(FailReason.NO_PRINCIPAL, sink.events.single().reason)
     }
 
     @Test

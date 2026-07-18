@@ -19,3 +19,4 @@ supersedes the old one.
 | [0008](0008-kotlinx-serialization-masking.md) | Masking on kotlinx.serialization (JsonTransformingSerializer + registry, thread-local context) | Accepted |
 | [0009](0009-ktor-adapter.md) | The Ktor adapter: a custom ContentConverter + a coroutine-bridge per-call context | Accepted |
 | [0010](0010-sealed-polymorphic-kotlinx-masking.md) | Sealed polymorphic `@IhawuResource` masking on kotlinx (supersedes ADR 0008's sealed limitation) | Accepted |
+| [0011](0011-configurable-fail-request-on-resolver-error.md) | Configurable `fail-request` on a resolver-error, on the neutral SPI | Accepted |

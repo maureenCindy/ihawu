@@ -3,6 +3,8 @@ package org.ihawu.jackson
 import com.fasterxml.jackson.databind.Module
 import com.fasterxml.jackson.databind.module.SimpleModule
 import org.ihawu.core.masking.DefaultMaskingEngine
+import org.ihawu.core.masking.MaskingFailureSink
+import org.ihawu.core.masking.ResolverErrorMode
 import org.ihawu.core.policy.ResourcePolicyResolver
 
 /**
@@ -19,6 +21,10 @@ import org.ihawu.core.policy.ResourcePolicyResolver
  * drops via SLF4J.
  *
  * @property resolver Resolves the field policies that apply to a resource for a given principal.
+ * @property failureSink Notified on each fail-closed drop; defaults to [Slf4jMaskingFailureSink] (logs via
+ *   SLF4J). Supply a composite to add metrics without losing the log.
+ * @property resolverErrorMode How a resolver failure is handled; defaults to [ResolverErrorMode.MASK_ALL].
+ *   [ResolverErrorMode.FAIL_REQUEST] throws so a policy-store outage surfaces as an error (ADR 0011).
  * @sample org.ihawu.samples.serialization.maskEmployeeProfile
  * @sample org.ihawu.samples.serialization.maskCollectionItems
  * @sample org.ihawu.samples.serialization.maskFailsClosedWithoutPrincipal
@@ -26,10 +32,12 @@ import org.ihawu.core.policy.ResourcePolicyResolver
  */
 class IhawuModule(
     private val resolver: ResourcePolicyResolver,
+    private val failureSink: MaskingFailureSink = Slf4jMaskingFailureSink(),
+    private val resolverErrorMode: ResolverErrorMode = ResolverErrorMode.MASK_ALL,
 ) : SimpleModule("IhawuModule") {
     override fun setupModule(context: Module.SetupContext) {
         super.setupModule(context)
-        val engine = DefaultMaskingEngine(resolver, Slf4jMaskingFailureSink())
+        val engine = DefaultMaskingEngine(resolver, failureSink, resolverErrorMode)
         context.addBeanSerializerModifier(IhawuBeanSerializerModifier(engine))
     }
 }
