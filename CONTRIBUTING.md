@@ -12,17 +12,16 @@ structured contribution model inspired by the JetBrains standard library reposit
 
 Before you open a terminal or write any code, you must commit to our three golden architectural constraints:
 
-1. **JVM Today, Multiplatform By Design:** Ihawu is **pure Kotlin (JVM)** and targets **Java 17+**. Do not add
-Multiplatform (KMP) compile configurations or native artifacts to the current build ad hoc — they will not work.
-`ihawu-core` depends on `jackson-databind` and `slf4j-api`, both JVM-only, and the masking engine is built directly
-on Jackson's serializer SPI. Multiplatform is a genuine design goal, but the path runs through lifting the
-enforcement point onto a serialization-neutral interface first; that work is tracked under the *0.3.0 —
-Serialization-neutral core* milestone. Start there, not in the build file.
-2. **Absolute Core Isolation:** The `ihawu-core` module must remain entirely unpolluted by web frameworks. 
-You are strictly forbidden from adding imports from `org.springframework.*`, `io.ktor.*`, or heavy Java servlet layers
-inside `ihawu-core`. If you need the caller's identity, use the core `IhawuPrincipal` abstraction. Jackson *is*
-currently permitted in core — it is the serialization engine masking is built on. Removing that coupling is tracked
-under the *0.3.0 — Serialization-neutral core* milestone.
+1. **Multiplatform Core:** `ihawu-core` is a **Kotlin Multiplatform** module (JVM + JS) and targets **Java 17+** on
+the JVM. Its masking engine sits behind a serialization-neutral SPI and carries no JVM-only dependency. Keep
+`commonMain` free of JVM-only APIs — Jackson, `slf4j`, or `java.*` beyond the multiplatform stdlib belong in a
+backend (`ihawu-jackson`) or a platform source set (`jvmMain`), never in core. Adding a JVM-only dependency to core
+breaks the JS target.
+2. **Absolute Core Isolation:** The `ihawu-core` module must remain entirely unpolluted by web frameworks *and* by
+any serialization engine. You are strictly forbidden from adding imports from `org.springframework.*`, `io.ktor.*`,
+`com.fasterxml.jackson.*`, or `kotlinx.serialization.*` inside `ihawu-core`. If you need the caller's identity, use
+the core `IhawuPrincipal` abstraction. Jackson masking lives in `ihawu-jackson`; kotlinx.serialization masking lives
+in `ihawu-kotlinx` — both implement core's serialization-neutral SPI.
 3. **No Heavy Runtime Reflection:** Dynamic field masking evaluates on hot response pathways right before JSON output 
 serialization. Do not introduce slow runtime reflection (`java.lang.reflect`) inside processing pipelines. 
 Leverage cached property maps or framework native streaming filters.
