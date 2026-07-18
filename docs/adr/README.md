@@ -16,3 +16,4 @@ supersedes the old one.
 | [0005](0005-hard-fail-on-unenforceable-masking-policy.md) | Hard-fail on an unenforceable masking policy | Accepted |
 | [0006](0006-serialization-neutral-masking-spi.md) | A serialization-neutral masking SPI | Accepted |
 | [0007](0007-no-logging-dependency-in-core.md) | No logging dependency in core; observability via the failure-sink SPI | Accepted |
+| [0008](0008-kotlinx-serialization-masking.md) | Masking on kotlinx.serialization (JsonTransformingSerializer + registry, thread-local context) | Accepted |

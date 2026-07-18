@@ -136,6 +136,11 @@ Not on Spring? Depend on `org.ihawu:ihawu-jackson` (it pulls `ihawu-core` transi
 `IhawuModule` on your `ObjectMapper`, and drive masking through a `ResourcePolicyResolver`. Full guides
 at [docs.ihawu.org](https://docs.ihawu.org).
 
+Not on the JVM, or on `kotlinx.serialization`? `org.ihawu:ihawu-kotlinx` is a **multiplatform** (JVM +
+JS) backend: register a masking serializer per `@IhawuResource` type and encode via `IhawuKotlinxJson`.
+It reuses the same neutral engine, so masking behaves identically — see
+[ADR 0008](docs/adr/0008-kotlinx-serialization-masking.md) for its design and performance tradeoffs.
+
 > **Migrating from 0.2.0.** The Jackson engine moved out of `ihawu-core` into a new `ihawu-jackson`
 > artifact, so `ihawu-core` itself is now serialization-neutral. Direct `ihawu-core` users who registered
 > `IhawuModule` — or loaded config via `RoleBasedResourcePolicyResolver.fromJson` (now
