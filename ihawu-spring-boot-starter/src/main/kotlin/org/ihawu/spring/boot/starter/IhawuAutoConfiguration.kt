@@ -17,8 +17,17 @@ import org.springframework.context.annotation.Import
  * Registers [org.ihawu.spring.boot.starter.configuration.IhawuProperties] and contributes Ihawu's beans, backing off when `ihawu.enabled=false`.
  * Each bean is guarded so applications can override it.
  *
+ * Ordered after the metrics auto-configs (via `afterName`, string form so there is no compile
+ * dependency on actuator) so [org.ihawu.spring.boot.starter.configuration.IhawuObservabilityConfig]'s
+ * `@ConditionalOnBean(MeterRegistry)` sees the registry — otherwise the Micrometer failure sink would
+ * silently never register (a `@ConditionalOnBean` ordering pitfall).
  */
-@AutoConfiguration
+@AutoConfiguration(
+    afterName = [
+        "org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration",
+        "org.springframework.boot.actuate.autoconfigure.metrics.export.simple.SimpleMetricsExportAutoConfiguration",
+    ],
+)
 @Import(
     value = [
         IhawuSecurityConfig::class,
