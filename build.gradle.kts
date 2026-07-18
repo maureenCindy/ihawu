@@ -42,7 +42,7 @@ subprojects {
     // The starter is documented too: Dokka 2.x isolates its own classpath in a worker, so the
     // Jackson clash that blocked it under Dokka 1.9.x is gone. Its internal Spring wiring is marked
     // `internal`, so the reference shows only the extension points and config surface.
-    val apiReferenceModules = setOf("ihawu-core", "ihawu-jackson", "ihawu-kotlinx", "ihawu-spring-boot-starter")
+    val apiReferenceModules = setOf("ihawu-core", "ihawu-jackson", "ihawu-kotlinx", "ihawu-ktor", "ihawu-spring-boot-starter")
     listOf("org.jetbrains.kotlin.jvm", "org.jetbrains.kotlin.multiplatform").forEach { kotlinPlugin ->
         pluginManager.withPlugin(kotlinPlugin) {
             pluginManager.apply("org.jlleitschuh.gradle.ktlint")
@@ -59,6 +59,7 @@ dependencies {
     dokka(project(":ihawu-core"))
     dokka(project(":ihawu-jackson"))
     dokka(project(":ihawu-kotlinx"))
+    dokka(project(":ihawu-ktor"))
     dokka(project(":ihawu-spring-boot-starter"))
 }
 
