@@ -15,12 +15,21 @@ import org.ihawu.core.policy.IhawuPrincipal
 fun maskingRegistry(vararg entries: Pair<KSerializer<*>, String>): Map<String, String> =
     entries.associate { (serializer, name) -> serializer.descriptor.serialName to name }
 
-/** Wraps a resource serializer so it masks through [engine], recursing via [registry]. */
+/**
+ * Wraps a resource serializer so it masks through [engine], recursing via [registry].
+ *
+ * [classDiscriminator] is the polymorphic class-discriminator key used to mask sealed `@IhawuResource`
+ * subtypes while preserving the discriminator. It must match the encoding `Json`'s
+ * `configuration.classDiscriminator` (default `"type"`). `Json.configuration.classDiscriminator` is a
+ * stable (non-experimental) API in kotlinx-serialization 1.8.1, so a call site (e.g. Ktor) can pass it
+ * without any opt-in.
+ */
 fun <T> maskingSerializer(
     delegate: KSerializer<T>,
     engine: MaskingEngine,
     registry: Map<String, String>,
-): KSerializer<T> = MaskingJsonTransformer(delegate, engine, registry)
+    classDiscriminator: String = "type",
+): KSerializer<T> = MaskingJsonTransformer(delegate, engine, registry, classDiscriminator)
 
 /** Encodes masked values with kotlinx.serialization, supplying the caller per encode. */
 object IhawuKotlinxJson {

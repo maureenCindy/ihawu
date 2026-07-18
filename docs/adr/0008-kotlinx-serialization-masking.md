@@ -83,13 +83,13 @@ directional (nanoTime, warm JVM); a future JMH run is authoritative.
 | --- | --- |
 | Non-JVM masking | Real — the JS target masks through the same neutral SPI (KMP payoff). |
 | Nested / collections / maps | Masked via registry-driven recursion; explicitly tested. |
-| Polymorphic / sealed `@IhawuResource` | **Not supported in v1** — documented limitation, tracked as a follow-up. |
+| Polymorphic / sealed `@IhawuResource` | **Not supported in v1** — documented limitation. *(Superseded in part by [ADR 0010](0010-sealed-polymorphic-kotlinx-masking.md): sealed hierarchies are now masked; OPEN/abstract remains a follow-up.)* |
 | Per-call context | Thread-local (JVM) + `ThreadLocal.asContextElement()` bridge for coroutines/Ktor; `expect`/`actual` holder. |
 | `@IhawuResource` coupling | Stays kotlinx-free; kotlinx resources use the explicit registry. |
 | Performance | Allocates more than the Jackson streaming path; JMH numbers published. |
 | SPI | Reused unchanged — validates the #77 serialization-neutral contract across a second engine. |
 
 ### Out of scope (follow-ups)
-- Polymorphic/sealed `@IhawuResource` recursion.
+- Polymorphic/sealed `@IhawuResource` recursion. *(Sealed done in [ADR 0010](0010-sealed-polymorphic-kotlinx-masking.md); OPEN/abstract still a follow-up.)*
 - The custom-`Encoder` streaming backend (perf), if a benchmark ever justifies it.
 - Annotation-driven kotlinx resource discovery (a `@SerialInfo` companion), if ergonomics demand it.
