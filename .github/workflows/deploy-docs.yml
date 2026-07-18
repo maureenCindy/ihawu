@@ -61,4 +61,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy build/dokka/html --project-name=ihawu-docs
+          # --branch=main forces a PRODUCTION deploy regardless of the triggering ref. Without it, a
+          # v* tag build (branch context "v0.3.0") is treated by Pages as a PREVIEW deploy and never
+          # reaches docs.ihawu.org — leaving production on the last main-push version. Every trigger
+          # here (main push, v* tag, manual dispatch) is meant to update production, so pin it.
+          command: pages deploy build/dokka/html --project-name=ihawu-docs --branch=main
