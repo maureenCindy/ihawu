@@ -6,6 +6,19 @@
 - **Depends on:** [ADR 0008](0008-kotlinx-serialization-masking.md) (kotlinx backend), [ADR 0006](0006-serialization-neutral-masking-spi.md) (neutral SPI)
 - **Supersedes (in part):** [ADR 0008](0008-kotlinx-serialization-masking.md) — its "polymorphic/sealed not supported in v1" limitation, for the **sealed** case.
 
+> **Update — 2026-07-18 (#104): OPEN polymorphism is now supported.** This ADR's original decision left
+> OPEN (non-sealed abstract/interface) hierarchies unsupported (sub-decision 4, the Consequences row, and
+> the Out-of-scope list below — now superseded). A spike proved OPEN is maskable **JVM + JS uniform**, so it
+> ships alongside sealed. Only the *subtype resolution* differs; the discriminator-preserving mask (object +
+> array) is unchanged. An OPEN base is not descriptor-enumerable, so the concrete subtype descriptor is
+> resolved from the `SerializersModule`: the base `KClass` comes off the `PolymorphicKind.OPEN` descriptor's
+> `capturedKClass` (`@ExperimentalSerializationApi`; works top-level **and** nested, JVM and JS), then
+> `serializersModule.getPolymorphic(baseClass, serializedClassName = discriminator)?.descriptor`. The module
+> is threaded into `maskingSerializer(...)` (default `EmptySerializersModule()` — backward-compatible), and
+> the Ktor converter passes `json.serializersModule`. **New requirement (OPEN only):** the caller must
+> register subtypes on the encoding `Json`'s module; an empty/mismatched module → passthrough (unchanged for
+> sealed). No residual limit — the "Out of scope" OPEN item below is done.
+
 ## Context
 
 [ADR 0008](0008-kotlinx-serialization-masking.md) shipped the kotlinx backend with manual, registry-driven
@@ -61,11 +74,11 @@ Four sub-decisions, each spike-validated (kotlinx 1.8.1):
 | --- | --- |
 | Sealed `@IhawuResource` masking | Masked, discriminator preserved; object + array encodings. Tested on JVM **and** JS. |
 | Nested / list of sealed subtypes | Masked for free — `maskElement` already threads the right element descriptor, so a polymorphic field/list-element reaches the new branch and recurses. |
-| OPEN (abstract/interface) polymorphism | **Still unsupported** — passthrough, even with a matching policy; tested, not silent. A documented follow-up. |
+| OPEN (abstract/interface) polymorphism | ~~**Still unsupported** — passthrough, even with a matching policy.~~ **Supported since #104** (see the Update banner) — resolved via the `SerializersModule`, JVM + JS. |
 | Discriminator-key coupling | **Fail-open** if the transformer's `classDiscriminator` disagrees with the encoding `Json`'s key: masking is silently skipped (tested). Adapters must thread `json.configuration.classDiscriminator`. |
 | Core / SPI | Reused unchanged — polymorphism masks through `MaskingEngine.decide`; validates the #77 seam a third time. |
 | Array-poly cast posture | `maskPolymorphicArray` trusts kotlinx's guaranteed `[String, Object]` shape (hard casts) — safe because the transformer only ever receives kotlinx's own serializer output for the delegate. |
 
 ### Out of scope (follow-ups)
-- **OPEN (non-sealed abstract/interface) polymorphism** via `SerializersModule` lookup.
+- ~~**OPEN (non-sealed abstract/interface) polymorphism** via `SerializersModule` lookup.~~ Done in #104 (see the Update banner).
 - Per-type `@JsonClassDiscriminator` and `classDiscriminatorMode` (e.g. `POLYMORPHIC` / `NONE`).
