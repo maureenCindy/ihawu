@@ -9,7 +9,9 @@ import org.ihawu.core.policy.ResourcePolicyResolver
  *
  * Fail-closed posture (see `docs/adr/0001-serialization-context-passing.md` and ADR 0006):
  * - no principal on the call → the whole resource is masked ([FailReason.NO_PRINCIPAL]);
- * - the [resolver] throws → the whole resource is masked ([FailReason.RESOLVER_ERROR]);
+ * - the [resolver] throws → the whole resource is masked ([FailReason.RESOLVER_ERROR]), unless
+ *   [resolverErrorMode] is [ResolverErrorMode.FAIL_REQUEST], which throws [MaskingResolverException] so
+ *   the request fails instead of silently returning `{}` (ADR 0011);
  * - a field's policy cannot satisfy the declared type → that field is dropped
  *   ([FailReason.HIDE_NON_NULLABLE] / [FailReason.REDACT_UNSAFE]).
  *
@@ -18,10 +20,12 @@ import org.ihawu.core.policy.ResourcePolicyResolver
  *
  * @property resolver Resolves the field policies for a `(principal, resource)`.
  * @property onFailClosed Notified on each fail-closed drop; defaults to a no-op so core needs no logger.
+ * @property resolverErrorMode How a resolver failure is handled; defaults to [ResolverErrorMode.MASK_ALL].
  */
 class DefaultMaskingEngine(
     private val resolver: ResourcePolicyResolver,
     private val onFailClosed: MaskingFailureSink = MaskingFailureSink { _, _, _, _ -> },
+    private val resolverErrorMode: ResolverErrorMode = ResolverErrorMode.MASK_ALL,
 ) : MaskingEngine {
     override fun decide(
         resource: String,
@@ -48,7 +52,10 @@ class DefaultMaskingEngine(
             Resolved.Ok(resolver.resolve(principal, resource).associateBy { it.field })
         } catch (ex: Exception) {
             onFailClosed.onFailClosed(resource, null, FailReason.RESOLVER_ERROR, ex)
-            Resolved.MaskAll(FailReason.RESOLVER_ERROR)
+            when (resolverErrorMode) {
+                ResolverErrorMode.MASK_ALL -> Resolved.MaskAll(FailReason.RESOLVER_ERROR)
+                ResolverErrorMode.FAIL_REQUEST -> throw MaskingResolverException(resource, ex)
+            }
         }
     }
 
