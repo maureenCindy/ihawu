@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
  * Keeping logging here rather than in the engine is what leaves `ihawu-core`'s masking model free of a
  * logging dependency.
  */
-internal class Slf4jMaskingFailureSink : MaskingFailureSink {
+class Slf4jMaskingFailureSink : MaskingFailureSink {
     override fun onFailClosed(
         resource: String,
         field: String?,
