@@ -1,7 +1,7 @@
 # Ihawu
-Ihawu is a policy enforcement and dynamic data-masking engine built in **Kotlin (JVM)**, with first-class support for
-**Spring Boot**. Ktor and Kotlin Multiplatform are design goals, not near-term releases — see
-[Roadmap](#roadmap) below. 
+Ihawu is a policy enforcement and dynamic data-masking engine for **Kotlin** — **serialization-neutral** and
+multiplatform (JVM + JS) at the core, with first-class adapters for **Spring Boot** and **Ktor**, masking on both
+**Jackson** and **kotlinx.serialization**. See the [Roadmap](#roadmap) below.
 
 ---
 
@@ -30,7 +30,7 @@ egress lifecycles:
 2. Ihawu Adapter    ──► Maps raw claims into IhawuPrincipal
 3. ResourcePolicyResolver ──► Resolves this caller's field policies for the resource
 4. Controller Logic Runs ──► Returns raw, complete Database Entity class 
-5. Ihawu Masker    ──► Intercepts Jackson (kotlinx.serialization planned)
+5. Ihawu Masker    ──► Intercepts the serializer (Jackson or kotlinx.serialization)
 6. Outbound JSON Stream ──► Transparently stripped (HIDE) or obfuscated (REDACT)
 
 Step 3 goes through the `ResourcePolicyResolver` SPI. Two implementations ship: `RoleBasedResourcePolicyResolver`
@@ -40,13 +40,13 @@ from somewhere else — a database, a per-tenant service, OPA — you implement 
 integrations.
 
 ### Guiding principles
-1. **Ingress Capture:** Your host framework (Spring Boot today; Ktor planned) handles the network cryptography and token 
+1. **Ingress Capture:** Your host framework (Spring Boot or Ktor) handles the network cryptography and token 
 verification. Ihawu instantly captures that verified identity and converts it into a uniform, framework-neutral 
 `IhawuPrincipal`.
 2. **Stateless Processing:** Your business controller runs completely unpolluted, querying your application database
 and returning its raw, strongly-typed domain entity exactly as it is.
 3. **Transparent Egress Masking:** Right before that object is written to the network pipe as a JSON string, 
-Ihawu intercepts the serialization engine (Jackson today; `kotlinx.serialization` planned). It references your active policy matrix
+Ihawu intercepts the serialization engine (Jackson or `kotlinx.serialization`). It references your active policy matrix
 and dynamically drops (`HIDE`) or overwrites (`REDACT`) restricted fields on the fly.
 
 ---
@@ -266,7 +266,7 @@ be 100% accurate and functional forever.
 
 ## Roadmap
 
-Work is tracked in [GitHub milestones](https://github.com/maureenCindy/ihawu/milestones). Three, in order:
+Work is tracked in [GitHub milestones](https://github.com/maureenCindy/ihawu/milestones). The first three shipped, in order:
 
 * **Docs: claims match behaviour** — every claim in the README, CONTRIBUTING, and the docs site is either true or
   removed. No feature described that does not exist.
@@ -275,15 +275,17 @@ Work is tracked in [GitHub milestones](https://github.com/maureenCindy/ihawu/mil
   that cannot be honoured failing at startup (#67, merging #68; [ADR 0005](docs/adr/0005-hard-fail-on-unenforceable-masking-policy.md)),
   and observable fail-closed behaviour (#72). Breaking: masking a non-`String` (or any `HIDE`) field now requires
   it to be nullable, and `MaskingStrategy.defaultValue` is renamed `defaultPlaceholder`.
-* **0.3.0 — Serialization-neutral core** — lift the enforcement point off Jackson onto a serialization-neutral SPI.
-  This is what unlocks Kotlin Multiplatform and a Ktor adapter, and it is the same seam that would let Ihawu mask at
-  sinks other than HTTP JSON.
+* **0.3.0 — Serialization-neutral core** — the enforcement point now sits behind a serialization-neutral SPI
+  ([ADR 0006](docs/adr/0006-serialization-neutral-masking-spi.md)). This unlocked Kotlin Multiplatform and the Ktor
+  adapter, and it is the same seam that would let Ihawu mask at sinks other than HTTP JSON.
 
-On multiplatform, specifically: `ihawu-core` depends on `jackson-databind` and `slf4j-api`, both JVM-only, and the
-masking engine is built directly on Jackson's serializer SPI. KMP is therefore not a target you can add to the build
-— it needs the 0.3.0 refactor first. `kotlinx.serialization` also has no equivalent of Jackson's
-`BeanSerializerModifier`, so that backend is a second engine rather than a port. The full explanation is on the docs
-site: [Running beyond the JVM](https://ihawu.org/core/overview/#running-beyond-the-jvm).
+That refactor is done: `ihawu-core` no longer depends on `jackson-databind` or `slf4j-api` and compiles to **JVM and
+JS**. Jackson masking moved to `ihawu-jackson`; `kotlinx.serialization` masking lives in `ihawu-kotlinx` — a second
+engine, since kotlinx has no equivalent of Jackson's `BeanSerializerModifier`. The full explanation is on the docs
+site: [Multiplatform](https://ihawu.org/core/overview/#multiplatform).
+
+**Next — 0.4.0:** OPEN polymorphic masking on kotlinx, observable/configurable fail-closed on the SPI, and Dokka
+versioned docs. Tracked on the [0.4.0 milestone](https://github.com/maureenCindy/ihawu/milestone/5).
 
 ---
 
