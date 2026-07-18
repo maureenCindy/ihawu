@@ -1,4 +1,4 @@
-package org.ihawu.core.serialization
+package org.ihawu.jackson
 
 import org.ihawu.core.masking.FailReason
 import org.ihawu.core.masking.MaskingFailureSink

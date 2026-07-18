@@ -1,15 +1,15 @@
-package org.ihawu.core.serialization
+package org.ihawu.jackson
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.ihawu.core.annotation.IhawuResource
-import org.ihawu.core.common.LogRecorder
 import org.ihawu.core.exception.IhawuCoreException
 import org.ihawu.core.masking.MaskingStrategy
 import org.ihawu.core.policy.FieldPolicy
 import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicyResolver
+import org.ihawu.jackson.common.LogRecorder
 import org.slf4j.event.Level
 import kotlin.test.BeforeTest
 import kotlin.test.Test

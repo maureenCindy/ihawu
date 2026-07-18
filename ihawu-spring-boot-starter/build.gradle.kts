@@ -41,9 +41,10 @@ dependencies {
     compileOnly("org.springframework.security:spring-security-core")
     compileOnly("org.springframework.boot:spring-boot-starter-web")
 
-    // api, not implementation: core types (@IhawuResource, FieldPolicy, MaskingStrategy) are part of
-    // the starter's public surface, so consumers compile against them with only the starter on the path.
-    api(project(":ihawu-core"))
+    // api, not implementation: ihawu-jackson — and the core types it re-exports (@IhawuResource,
+    // FieldPolicy, MaskingStrategy) — are part of the starter's public surface, so consumers compile
+    // against them with only the starter on the path. ihawu-jackson pulls ihawu-core transitively.
+    api(project(":ihawu-jackson"))
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter")
 

@@ -1,4 +1,4 @@
-package org.ihawu.core.common
+package org.ihawu.jackson.common
 
 import org.slf4j.ILoggerFactory
 import org.slf4j.Marker

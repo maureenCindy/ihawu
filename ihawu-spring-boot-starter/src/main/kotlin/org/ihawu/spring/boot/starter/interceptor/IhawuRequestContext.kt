@@ -1,7 +1,7 @@
 package org.ihawu.spring.boot.starter.interceptor
 
 import org.ihawu.core.policy.IhawuPrincipal
-import org.ihawu.core.serialization.IhawuSerialization
+import org.ihawu.jackson.IhawuSerialization
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 

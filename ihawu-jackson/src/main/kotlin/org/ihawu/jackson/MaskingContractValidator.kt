@@ -1,4 +1,4 @@
-package org.ihawu.core.serialization
+package org.ihawu.jackson
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.ihawu.core.masking.FailReason

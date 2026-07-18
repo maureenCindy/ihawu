@@ -1,4 +1,4 @@
-package org.ihawu.core.serialization
+package org.ihawu.jackson
 
 import com.fasterxml.jackson.databind.Module
 import com.fasterxml.jackson.databind.module.SimpleModule

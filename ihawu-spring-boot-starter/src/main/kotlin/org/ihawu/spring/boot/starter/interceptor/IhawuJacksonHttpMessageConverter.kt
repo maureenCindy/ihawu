@@ -3,7 +3,7 @@ package org.ihawu.spring.boot.starter.interceptor
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
-import org.ihawu.core.serialization.IhawuSerialization
+import org.ihawu.jackson.IhawuSerialization
 import org.springframework.http.MediaType
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 
@@ -16,7 +16,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
  * `SerializerProvider.getAttribute`. When there is no principal (unauthenticated, anonymous, or Spring
  * Security absent) no attribute is attached, so the serializer fails closed and emits `{}`.
  *
- * @param objectMapper the application's configured mapper (already carrying [org.ihawu.core.serialization.IhawuModule]).
+ * @param objectMapper the application's configured mapper (already carrying [org.ihawu.jackson.IhawuModule]).
  */
 internal class IhawuJacksonHttpMessageConverter(
     objectMapper: ObjectMapper,
