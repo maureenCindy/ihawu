@@ -3,6 +3,7 @@ package org.ihawu.core.serialization
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter
 import org.ihawu.core.annotation.IhawuResource
+import org.ihawu.core.masking.DefaultMaskingEngine
 import org.ihawu.core.policy.FieldPolicy
 import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicyResolver
@@ -31,7 +32,7 @@ private class DummyResolver : ResourcePolicyResolver {
 
 class IhawuBeanSerializerModifierTest {
     private val mapper = ObjectMapper()
-    private val modifier = IhawuBeanSerializerModifier(DummyResolver())
+    private val modifier = IhawuBeanSerializerModifier(DefaultMaskingEngine(DummyResolver()))
 
     /** Borrows a real SerializationConfig + BeanDescription from Jackson for [type]. */
     private fun changeProperties(

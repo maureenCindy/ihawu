@@ -1,7 +1,8 @@
 package org.ihawu.core.serialization
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.ihawu.core.masking.MaskingStrategy
+import org.ihawu.core.masking.FailReason
+import org.ihawu.core.masking.MaskingCapability
 import org.ihawu.core.policy.FieldPolicy
 
 /**
@@ -63,10 +64,15 @@ object MaskingContractValidator {
         when {
             capability == null ->
                 "field is not a serialized property of the resource; the policy masks nothing — check the field name"
-            policy.strategy == MaskingStrategy.REDACT && capability == MaskingCapability.UNSAFE ->
-                "REDACT cannot mask a non-nullable non-String field; declare it nullable or expose it as a String"
-            policy.strategy == MaskingStrategy.HIDE && !capability.omittable ->
-                "HIDE cannot omit a non-nullable field; use REDACT, or declare the field nullable/optional"
-            else -> null
+            // Reuse the engine's own predicate so the startup check matches runtime behaviour exactly.
+            // unenforceableReason only ever yields the two type-contract reasons for a matched field.
+            else ->
+                capability.unenforceableReason(policy.strategy)?.let { reason ->
+                    if (reason == FailReason.HIDE_NON_NULLABLE) {
+                        "HIDE cannot omit a non-nullable field; use REDACT, or declare the field nullable/optional"
+                    } else {
+                        "REDACT cannot mask a non-nullable non-String field; declare it nullable or expose it as a String"
+                    }
+                }
         }
 }

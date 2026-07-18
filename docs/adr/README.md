@@ -14,3 +14,4 @@ supersedes the old one.
 | [0003](0003-default-visibility-on-missing-policy.md) | Default visibility when no policy matches | Accepted |
 | [0004](0004-static-policy-configuration.md) | Supplying static masking policy from configuration | Accepted |
 | [0005](0005-hard-fail-on-unenforceable-masking-policy.md) | Hard-fail on an unenforceable masking policy | Accepted |
+| [0006](0006-serialization-neutral-masking-spi.md) | A serialization-neutral masking SPI | Accepted |

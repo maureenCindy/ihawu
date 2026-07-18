@@ -11,7 +11,7 @@ package org.ihawu.core.masking
  * @property securityLevel Numeric rank used for comparison. Higher values indicate
  *   stricter protection (e.g. [HIDE] > [REDACT]).
  * @property defaultPlaceholder The fallback *string* placeholder for REDACT when a FieldPolicy gives none. Non-String fields
- * never use this — their masked form is JSON null, decided by [org.ihawu.core.serialization.MaskingCapability].
+ * never use this — their masked form is JSON null, decided by [MaskingCapability].
  */
 enum class MaskingStrategy(
     val description: String,

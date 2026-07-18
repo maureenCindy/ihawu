@@ -2,17 +2,19 @@ package org.ihawu.core.serialization
 
 import com.fasterxml.jackson.databind.BeanDescription
 import com.fasterxml.jackson.databind.SerializationConfig
+import org.ihawu.core.masking.MaskingCapability
 import kotlin.reflect.full.primaryConstructor
 
 /**
- * Computes the [MaskingCapability] of every property of a resource bean, keyed by its **serialized**
- * name.
+ * Derives the [MaskingCapability] of every property of a resource bean from Jackson's introspection,
+ * keyed by its **serialized** name.
  *
- * The single source of truth shared by the two places that need it: [IhawuBeanSerializerModifier],
- * which wraps writers at serializer-build time, and [MaskingContractValidator], which checks policies
- * at startup. Both derive capabilities identically — from Jackson's introspection (so `@JsonProperty`
- * renames resolve the same way) and Kotlin nullability read from the primary constructor — so a policy
- * the validator accepts behaves exactly as predicted at serialization time.
+ * This is where the neutral [MaskingCapability] meets Jackson: it reads each property's declared type
+ * (textual-or-not) and its Kotlin nullability, then hands those two facts to
+ * [MaskingCapability.of]. The single source of truth shared by the two places that need it:
+ * [IhawuBeanSerializerModifier], which wraps writers at serializer-build time, and
+ * [MaskingContractValidator], which checks policies at startup — so a policy the validator accepts
+ * behaves exactly as predicted at serialization time (including `@JsonProperty` renames).
  */
 internal object MaskingCapabilities {
     /** Introspects [beanClass] via [config], then classifies each property. */
@@ -34,7 +36,11 @@ internal object MaskingCapabilities {
                 .orEmpty()
 
         return beanDesc.findProperties().associate { prop ->
-            prop.name to MaskingCapability.of(prop.primaryType, nullableByProperty[prop.internalName] ?: false)
+            prop.name to
+                MaskingCapability.of(
+                    isTextual = prop.primaryType.isTypeOrSubTypeOf(CharSequence::class.java),
+                    nullable = nullableByProperty[prop.internalName] ?: false,
+                )
         }
     }
 }

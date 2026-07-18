@@ -2,6 +2,7 @@ package org.ihawu.core.serialization
 
 import com.fasterxml.jackson.databind.Module
 import com.fasterxml.jackson.databind.module.SimpleModule
+import org.ihawu.core.masking.DefaultMaskingEngine
 import org.ihawu.core.policy.ResourcePolicyResolver
 
 /**
@@ -13,7 +14,9 @@ import org.ihawu.core.policy.ResourcePolicyResolver
  * [org.ihawu.core.policy.IhawuPrincipal]. Types without the annotation serialize unchanged.
  *
  * Ihawu stays a Policy Enforcement Point: it enforces the decisions [resolver] returns and never
- * evaluates policy conditions itself.
+ * evaluates policy conditions itself. The masking decisions run through a serialization-neutral
+ * [DefaultMaskingEngine]; this module is the Jackson backend that executes them and logs fail-closed
+ * drops via SLF4J.
  *
  * @property resolver Resolves the field policies that apply to a resource for a given principal.
  * @sample org.ihawu.samples.serialization.maskEmployeeProfile
@@ -26,6 +29,7 @@ class IhawuModule(
 ) : SimpleModule("IhawuModule") {
     override fun setupModule(context: Module.SetupContext) {
         super.setupModule(context)
-        context.addBeanSerializerModifier(IhawuBeanSerializerModifier(resolver))
+        val engine = DefaultMaskingEngine(resolver, Slf4jMaskingFailureSink())
+        context.addBeanSerializerModifier(IhawuBeanSerializerModifier(engine))
     }
 }
