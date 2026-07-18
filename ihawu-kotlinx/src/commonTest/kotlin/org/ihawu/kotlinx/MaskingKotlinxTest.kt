@@ -1,5 +1,6 @@
 package org.ihawu.kotlinx
 
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -8,6 +9,9 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 import org.ihawu.core.annotation.IhawuResource
 import org.ihawu.core.masking.DefaultMaskingEngine
 import org.ihawu.core.masking.MaskingStrategy
@@ -44,7 +48,7 @@ data class Note(
     val text: String,
 )
 
-/** Polymorphic/sealed: out of scope in v1 — proves it passes through unmasked (documented limitation). */
+/** Sealed `@IhawuResource`: the spike proves its subtype masks with the discriminator preserved. */
 @Serializable
 sealed interface Shape {
     @Serializable
@@ -53,7 +57,35 @@ sealed interface Shape {
     data class Circle(
         val secret: String?,
     ) : Shape
+
+    /** A second subtype that is deliberately NOT registered, to prove unregistered → passthrough. */
+    @Serializable
+    @SerialName("square")
+    data class Square(
+        val label: String,
+    ) : Shape
 }
+
+/** A resource that holds a sealed `Shape` field, to prove nested polymorphic masking. */
+@Serializable
+@IhawuResource("gallery")
+data class Gallery(
+    val id: String,
+    val shape: Shape,
+)
+
+/** OPEN polymorphic (abstract, not sealed): the spike proves it passes through unmasked (v1 follow-up). */
+@Serializable
+abstract class Animal {
+    abstract val secret: String
+}
+
+@Serializable
+@SerialName("dog")
+@IhawuResource("animal")
+data class Dog(
+    override val secret: String,
+) : Animal()
 
 internal class TestResolver : ResourcePolicyResolver {
     override fun resolve(
@@ -69,6 +101,8 @@ internal class TestResolver : ResourcePolicyResolver {
                 )
             "address" -> listOf(FieldPolicy("zip", MaskingStrategy.HIDE))
             "shape" -> listOf(FieldPolicy("secret", MaskingStrategy.REDACT, "***"))
+            "animal" -> listOf(FieldPolicy("secret", MaskingStrategy.REDACT, "***")) // OPEN: proves it is NOT applied
+
             else -> emptyList()
         }
 }
@@ -138,11 +172,104 @@ class MaskingKotlinxTest {
         assertTrue(out.isEmpty()) // no principal -> {}
     }
 
+    private val shapeRegistry = maskingRegistry(Shape.Circle.serializer() to "shape")
+
     @Test
-    fun polymorphicResourceIsNotMaskedInV1() {
-        // Documented v1 limitation: a sealed/polymorphic @IhawuResource passes through unmasked.
-        val shapeSer = maskingSerializer(Shape.serializer(), engine, maskingRegistry(Shape.Circle.serializer() to "shape"))
-        val out = IhawuKotlinxJson.encodeToString(json, principal, shapeSer, Shape.Circle("top-secret"))
-        assertTrue(out.contains("top-secret")) // NOT masked — polymorphism is a follow-up
+    fun sealedSubtypeMasksAndPreservesDiscriminator() {
+        val shapeSer = maskingSerializer(Shape.serializer(), engine, shapeRegistry)
+        val out = json.parseToJsonElement(IhawuKotlinxJson.encodeToString(json, principal, shapeSer, Shape.Circle("top-secret"))).jsonObject
+        assertEquals("circle", out["type"]?.jsonPrimitive?.content) // discriminator preserved
+        assertEquals("***", out["secret"]?.jsonPrimitive?.content) // REDACT applied
+    }
+
+    @Test
+    fun sealedSubtypeMasksNestedInsideAnotherResource() {
+        val galleryRegistry = maskingRegistry(Gallery.serializer() to "gallery", Shape.Circle.serializer() to "shape")
+        val galSer = maskingSerializer(Gallery.serializer(), engine, galleryRegistry)
+        val value = Gallery("g1", Shape.Circle("top-secret"))
+        val out = json.parseToJsonElement(IhawuKotlinxJson.encodeToString(json, principal, galSer, value)).jsonObject
+        assertEquals("g1", out["id"]?.jsonPrimitive?.content)
+        val shape = out["shape"]!!.jsonObject
+        assertEquals("circle", shape["type"]?.jsonPrimitive?.content) // discriminator preserved
+        assertEquals("***", shape["secret"]?.jsonPrimitive?.content) // nested subtype masked
+    }
+
+    @Test
+    fun sealedSubtypeMasksInsideList() {
+        val listSer = maskingSerializer(ListSerializer(Shape.serializer()), engine, shapeRegistry)
+        val value = listOf<Shape>(Shape.Circle("a"), Shape.Circle("b"))
+        val out = json.parseToJsonElement(IhawuKotlinxJson.encodeToString(json, principal, listSer, value)).jsonArray
+        assertEquals(2, out.size)
+        out.forEach {
+            assertEquals("circle", it.jsonObject["type"]?.jsonPrimitive?.content)
+            assertEquals("***", it.jsonObject["secret"]?.jsonPrimitive?.content)
+        }
+    }
+
+    @Test
+    fun sealedSubtypeMasksWithArrayPolymorphism() {
+        val arrJson = Json { useArrayPolymorphism = true }
+        val shapeSer = maskingSerializer(Shape.serializer(), engine, shapeRegistry)
+        val encoded = IhawuKotlinxJson.encodeToString(arrJson, principal, shapeSer, Shape.Circle("top-secret"))
+        val out = arrJson.parseToJsonElement(encoded).jsonArray
+        assertEquals(2, out.size)
+        assertEquals("circle", out[0].jsonPrimitive.content) // discriminator (element[0]) preserved
+        assertEquals("***", out[1].jsonObject["secret"]?.jsonPrimitive?.content) // payload (element[1]) masked
+    }
+
+    @Test
+    fun sealedSubtypeMasksWithCustomDiscriminatorKey() {
+        // Proves threading a non-default classDiscriminator through the factory + transformer.
+        val customJson = Json { classDiscriminator = "kind" }
+        val shapeSer = maskingSerializer(Shape.serializer(), engine, shapeRegistry, classDiscriminator = "kind")
+        val encoded = IhawuKotlinxJson.encodeToString(customJson, principal, shapeSer, Shape.Circle("top-secret"))
+        val out = customJson.parseToJsonElement(encoded).jsonObject
+        assertEquals("circle", out["kind"]?.jsonPrimitive?.content) // custom discriminator preserved
+        assertEquals("***", out["secret"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun unregisteredSealedSubtypePassesThroughUnmasked() {
+        // Square is not in the registry: it must pass through unmasked, discriminator intact.
+        val shapeSer = maskingSerializer(Shape.serializer(), engine, shapeRegistry)
+        val out = json.parseToJsonElement(IhawuKotlinxJson.encodeToString(json, principal, shapeSer, Shape.Square("keep-me"))).jsonObject
+        assertEquals("square", out["type"]?.jsonPrimitive?.content)
+        assertEquals("keep-me", out["label"]?.jsonPrimitive?.content) // untouched
+    }
+
+    @Test
+    fun mismatchedDiscriminatorKeyPassesThrough() {
+        // Transformer configured for "wrong" but Json emits "type": no discriminator found -> passthrough.
+        val shapeSer = maskingSerializer(Shape.serializer(), engine, shapeRegistry, classDiscriminator = "wrong")
+        val out = json.parseToJsonElement(IhawuKotlinxJson.encodeToString(json, principal, shapeSer, Shape.Circle("top-secret"))).jsonObject
+        assertEquals("circle", out["type"]?.jsonPrimitive?.content)
+        assertEquals("top-secret", out["secret"]?.jsonPrimitive?.content) // NOT masked: discriminator not located
+    }
+
+    private val openModule = SerializersModule { polymorphic(Animal::class) { subclass(Dog::class) } }
+    private val animalRegistry = maskingRegistry(Dog.serializer() to "animal")
+
+    @Test
+    fun openPolymorphicPassesThroughUnmasked() {
+        // OPEN (abstract) base: subtypes are NOT descriptor-enumerable, so v1 leaves it unmasked (object encoding).
+        val openJson = Json { serializersModule = openModule }
+        val animalSer = maskingSerializer(PolymorphicSerializer(Animal::class), engine, animalRegistry)
+        val out = openJson.parseToJsonElement(IhawuKotlinxJson.encodeToString(openJson, principal, animalSer, Dog("top-secret"))).jsonObject
+        assertEquals("dog", out["type"]?.jsonPrimitive?.content)
+        assertEquals("top-secret", out["secret"]?.jsonPrimitive?.content) // policy exists but OPEN is unsupported -> unmasked
+    }
+
+    @Test
+    fun openPolymorphicArrayPassesThroughUnmasked() {
+        val openArrJson =
+            Json {
+                serializersModule = openModule
+                useArrayPolymorphism = true
+            }
+        val animalSer = maskingSerializer(PolymorphicSerializer(Animal::class), engine, animalRegistry)
+        val encoded = IhawuKotlinxJson.encodeToString(openArrJson, principal, animalSer, Dog("top-secret"))
+        val out = openArrJson.parseToJsonElement(encoded).jsonArray
+        assertEquals("dog", out[0].jsonPrimitive.content)
+        assertEquals("top-secret", out[1].jsonObject["secret"]?.jsonPrimitive?.content) // OPEN array -> unmasked
     }
 }

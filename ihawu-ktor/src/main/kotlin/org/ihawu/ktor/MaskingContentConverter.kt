@@ -48,7 +48,9 @@ class MaskingContentConverter(
     ): OutgoingContent {
         val kotlinType = requireNotNull(typeInfo.kotlinType) { "Cannot mask a response without a Kotlin type: $typeInfo" }
         val base = json.serializersModule.serializer(kotlinType)
-        val masking = maskingSerializer(base, engine, registry)
+        // Thread this Json's discriminator key so sealed @IhawuResource subtypes mask (ADR 0010); relying
+        // on the "type" default would silently fail open if the app configured a custom classDiscriminator.
+        val masking = maskingSerializer(base, engine, registry, json.configuration.classDiscriminator)
         return TextContent(json.encodeToString(masking, value), contentType.withCharset(charset))
     }
 

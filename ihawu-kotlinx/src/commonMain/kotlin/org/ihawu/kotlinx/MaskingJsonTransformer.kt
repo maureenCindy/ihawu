@@ -1,6 +1,7 @@
 package org.ihawu.kotlinx
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
@@ -10,6 +11,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonTransformingSerializer
+import kotlinx.serialization.json.contentOrNull
 import org.ihawu.core.masking.MaskingCapability
 import org.ihawu.core.masking.MaskingDecision
 import org.ihawu.core.masking.MaskingEngine
@@ -22,8 +24,11 @@ import org.ihawu.core.masking.MaskingEngine
  *
  * kotlinx has no per-property hook, so recursion is manual, driven by [registry] (`serialName ->
  * resourceName`): nested `@IhawuResource` objects, list elements, and map values mask themselves as they
- * are reached. Polymorphic/sealed hierarchies are not handled in v1 (their elements pass through) —
- * their descriptor `serialName` is not a registry key. See ADR 0008.
+ * are reached. **Sealed** `@IhawuResource` subtypes are masked too — the [classDiscriminator] entry is
+ * preserved and the payload masked against the concrete subtype descriptor, for both the object and the
+ * array-polymorphism encodings (ADR 0010). **OPEN (non-sealed abstract/interface) hierarchies are not
+ * masked** (their subtypes are not descriptor-enumerable) — they pass through, even with a matching policy.
+ * See ADR 0008 and ADR 0010.
  *
  * The cost vs the Jackson backend: this materialises the whole element tree before rewriting it.
  */
@@ -31,6 +36,7 @@ class MaskingJsonTransformer<T>(
     private val delegate: KSerializer<T>,
     private val engine: MaskingEngine,
     private val registry: Map<String, String>,
+    private val classDiscriminator: String = "type",
 ) : JsonTransformingSerializer<T>(delegate) {
     override fun transformSerialize(element: JsonElement): JsonElement = maskElement(element, delegate.descriptor)
 
@@ -44,18 +50,70 @@ class MaskingJsonTransformer<T>(
                 JsonObject(element.mapValues { (_, v) -> maskElement(v, desc.getElementDescriptor(1)) })
             element is JsonArray && desc.kind == StructureKind.LIST ->
                 JsonArray(element.map { maskElement(it, desc.getElementDescriptor(0)) })
+            // Polymorphic default encoding: {"<disc>":"circle", ...payload}. Mask payload, keep discriminator.
+            element is JsonObject && desc.kind is PolymorphicKind -> maskPolymorphicObject(element, desc)
+            // Array polymorphism: ["circle", {...payload}]. Mask element[1], keep element[0].
+            element is JsonArray && desc.kind is PolymorphicKind -> maskPolymorphicArray(element, desc)
             else -> element // primitives, JsonNull, or non-resource structures: unchanged
         }
+
+    /**
+     * Resolves the concrete subtype descriptor from a discriminator value, for a SEALED base only.
+     * Spike-confirmed shape (kotlinx 1.8.1): a SEALED descriptor has elementsCount=2 — element[0] "type"
+     * (String) and element[1] "value" (CONTEXTUAL, serialName `kotlinx.serialization.Sealed<Base>`) whose
+     * child element descriptors are the concrete subtypes, each with `serialName == @SerialName`
+     * (e.g. "circle") — which is exactly the discriminator value. No SerializersModule needed.
+     * OPEN/abstract bases are not enumerable this way, so this returns null → passthrough.
+     */
+    private fun resolveSealedSubtype(
+        desc: SerialDescriptor,
+        discriminatorValue: String,
+    ): SerialDescriptor? {
+        if (desc.kind !is PolymorphicKind.SEALED) return null
+        val valueSlot = desc.getElementDescriptor(1) // the "value" slot
+        for (i in 0 until valueSlot.elementsCount) {
+            val sub = valueSlot.getElementDescriptor(i)
+            if (sub.serialName == discriminatorValue) return sub
+        }
+        return null
+    }
+
+    private fun maskPolymorphicObject(
+        obj: JsonObject,
+        desc: SerialDescriptor,
+    ): JsonElement {
+        // Absent only if `classDiscriminator` is misconfigured vs the encoding Json's key -> passthrough.
+        val discriminator = (obj[classDiscriminator] as? JsonPrimitive)?.contentOrNull ?: return obj
+        val subtype = resolveSealedSubtype(desc, discriminator) ?: return obj // OPEN or unknown -> passthrough
+        // The discriminator key is NOT an element of the subtype descriptor; copy it verbatim, mask the rest.
+        return maskObject(obj, subtype, passthroughKey = classDiscriminator)
+    }
+
+    private fun maskPolymorphicArray(
+        arr: JsonArray,
+        desc: SerialDescriptor,
+    ): JsonElement {
+        // Array polymorphism always emits exactly [discriminatorString, payloadObject] for a class subtype.
+        val discriminator = (arr[0] as JsonPrimitive).content
+        val subtype = resolveSealedSubtype(desc, discriminator) ?: return arr // OPEN or unknown -> passthrough
+        return JsonArray(listOf(arr[0], maskObject(arr[1] as JsonObject, subtype)))
+    }
 
     private fun maskObject(
         obj: JsonObject,
         desc: SerialDescriptor,
+        passthroughKey: String? = null,
     ): JsonObject {
         // A nullable descriptor (e.g. an `Address?` field) reports serialName "Address?"; normalise it.
         val resource = registry[desc.serialName.removeSuffix("?")]
         val context = maskingContext ?: SimpleMaskingContext(null) // no context -> fail closed
         val out = LinkedHashMap<String, JsonElement>(obj.size)
         for ((name, value) in obj) {
+            if (name == passthroughKey) {
+                // The polymorphic discriminator: not an element of this descriptor; copy through verbatim.
+                out[name] = value
+                continue
+            }
             // Keys come from serializing this descriptor, so every name resolves to an element descriptor.
             val elemDesc = desc.getElementDescriptor(desc.getElementIndex(name))
             if (resource == null) {

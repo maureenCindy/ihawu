@@ -23,6 +23,7 @@ import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import io.ktor.util.reflect.TypeInfo
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -61,6 +62,24 @@ private val employeePolicy =
             "MANAGER" to listOf(FieldPolicy("ssn", MaskingStrategy.REDACT, "***")),
             "EMPLOYEE" to listOf(FieldPolicy("salary", MaskingStrategy.HIDE), FieldPolicy("ssn", MaskingStrategy.HIDE)),
         ),
+    )
+
+/** A sealed `@IhawuResource`: proves the Ktor adapter masks polymorphic subtypes (ADR 0010). */
+@Serializable
+private sealed interface Document {
+    @Serializable
+    @SerialName("report")
+    @IhawuResource("document")
+    data class Report(
+        val title: String,
+        val body: String, // REDACT -> "***"
+    ) : Document
+}
+
+private val documentPolicy =
+    ResourcePolicy(
+        "document",
+        mapOf("MANAGER" to listOf(FieldPolicy("body", MaskingStrategy.REDACT, "***"))),
     )
 
 /** Resolves the caller from an `X-Role` header — a test stand-in for a real `Authentication` bridge. */
@@ -222,4 +241,47 @@ class IhawuKtorTest {
             }
         }
     }
+
+    @Test
+    fun sealedResourceSubtypeMasksWithDiscriminatorPreserved() =
+        testApplication {
+            application {
+                install(IhawuKtor) {
+                    resolvePrincipal = { call ->
+                        if (call.request.headers["X-Role"] == "MANAGER") IhawuPrincipal("u1", setOf("MANAGER"), emptyMap()) else null
+                    }
+                    policies(documentPolicy)
+                    resources(Document.Report.serializer() to "document")
+                }
+                // respond<Document> so Ktor resolves the polymorphic serializer and emits the discriminator.
+                routing { get("/doc") { call.respond<Document>(Document.Report("q3-forecast", "top-secret")) } }
+            }
+
+            val json = parse(client.get("/doc") { header("X-Role", "MANAGER") }.bodyAsText())
+
+            assertEquals("report", json["type"]?.jsonPrimitive?.content) // discriminator preserved
+            assertEquals("q3-forecast", json["title"]?.jsonPrimitive?.content)
+            assertEquals("***", json["body"]?.jsonPrimitive?.content) // sealed subtype field masked
+        }
+
+    @Test
+    fun customClassDiscriminatorIsThreadedIntoMasking() =
+        testApplication {
+            // The app configures a non-default discriminator. The converter must thread
+            // json.configuration.classDiscriminator (ADR 0010) — otherwise masking silently fails open.
+            application {
+                install(IhawuKtor) {
+                    json = Json { classDiscriminator = "kind" }
+                    resolvePrincipal = { IhawuPrincipal("u1", setOf("MANAGER"), emptyMap()) }
+                    policies(documentPolicy)
+                    resources(Document.Report.serializer() to "document")
+                }
+                routing { get("/doc") { call.respond<Document>(Document.Report("q3-forecast", "top-secret")) } }
+            }
+
+            val json = parse(client.get("/doc").bodyAsText())
+
+            assertEquals("report", json["kind"]?.jsonPrimitive?.content) // custom discriminator preserved
+            assertEquals("***", json["body"]?.jsonPrimitive?.content) // masked despite the non-"type" key
+        }
 }
