@@ -7,8 +7,8 @@ import org.ihawu.core.masking.MaskingStrategy
 import org.ihawu.core.policy.FieldPolicy
 import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicyResolver
-import org.ihawu.core.serialization.IhawuModule
-import org.ihawu.core.serialization.IhawuSerialization
+import org.ihawu.jackson.IhawuModule
+import org.ihawu.jackson.IhawuSerialization
 
 @IhawuResource("employee.address")
 data class Address(

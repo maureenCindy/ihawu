@@ -1,7 +1,7 @@
 package org.ihawu.spring.boot.starter.configuration
 
 import org.ihawu.core.policy.ResourcePolicyResolver
-import org.ihawu.core.serialization.IhawuModule
+import org.ihawu.jackson.IhawuModule
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

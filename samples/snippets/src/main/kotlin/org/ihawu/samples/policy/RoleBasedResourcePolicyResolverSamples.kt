@@ -5,6 +5,7 @@ import org.ihawu.core.policy.FieldPolicy
 import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicy
 import org.ihawu.core.policy.RoleBasedResourcePolicyResolver
+import org.ihawu.jackson.JacksonPolicyConfig
 
 fun resolvePoliciesForRole() {
     // Static rules: for the "employee" resource, the MANAGER role redacts salary.
@@ -57,7 +58,7 @@ fun loadResolverFromJson() {
           }
         }
         """.trimIndent()
-    val resolver = RoleBasedResourcePolicyResolver.fromJson(config)
+    val resolver = JacksonPolicyConfig.fromJson(config)
 
     val principal = IhawuPrincipal("u1", roles = setOf("MANAGER"), attributes = emptyMap())
     val policies = resolver.resolve(principal, "employee")

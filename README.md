@@ -132,8 +132,15 @@ implementation "org.ihawu:ihawu-spring-boot-starter:0.1.0"
 </dependency>
 ```
 
-Not on Spring? Depend on `org.ihawu:ihawu-core:0.1.0` directly and drive masking through a
-`ResourcePolicyResolver`. Full guides at [docs.ihawu.org](https://docs.ihawu.org).
+Not on Spring? Depend on `org.ihawu:ihawu-jackson` (it pulls `ihawu-core` transitively), register
+`IhawuModule` on your `ObjectMapper`, and drive masking through a `ResourcePolicyResolver`. Full guides
+at [docs.ihawu.org](https://docs.ihawu.org).
+
+> **Migrating from 0.2.0.** The Jackson engine moved out of `ihawu-core` into a new `ihawu-jackson`
+> artifact, so `ihawu-core` itself is now serialization-neutral. Direct `ihawu-core` users who registered
+> `IhawuModule` — or loaded config via `RoleBasedResourcePolicyResolver.fromJson` (now
+> `JacksonPolicyConfig.fromJson`) — must add `org.ihawu:ihawu-jackson`. **Spring Boot starter users are
+> unaffected**; the starter pulls it in.
 
 ---
 

@@ -3,8 +3,8 @@ package org.ihawu.spring.boot.starter.configuration
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.ihawu.core.annotation.IhawuResource
 import org.ihawu.core.exception.IhawuCoreException
-import org.ihawu.core.serialization.MaskingContractValidator
-import org.ihawu.core.serialization.MaskingContractViolation
+import org.ihawu.jackson.MaskingContractValidator
+import org.ihawu.jackson.MaskingContractViolation
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.SmartInitializingSingleton
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider

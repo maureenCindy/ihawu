@@ -9,10 +9,13 @@ plugins {
 }
 
 dependencies {
-    // slf4j-api is currently unused (the only logger moved to ihawu-jackson with the Jackson backend);
-    // its removal + the KMP-safe logging decision are tracked in #79.
+    api(project(":ihawu-core"))
+    api("com.fasterxml.jackson.core:jackson-databind:2.22.1")
     api("org.slf4j:slf4j-api:2.0.18")
+    implementation(kotlin("reflect"))
     testImplementation(kotlin("test"))
+    // No logging binding dependency: test sources provide an in-memory SLF4JServiceProvider
+    // (org.ihawu.jackson.common.RecordingServiceProvider) so log assertions need no extra library.
 }
 
 mavenPublishing {
@@ -25,7 +28,7 @@ mavenPublishing {
 }
 
 tasks.named<Jar>("jar") {
-    manifest { attributes["Automatic-Module-Name"] = "org.ihawu.core" }
+    manifest { attributes["Automatic-Module-Name"] = "org.ihawu.jackson" }
 }
 
 kotlin {

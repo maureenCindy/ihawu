@@ -1,4 +1,4 @@
-package org.ihawu.core.serialization
+package org.ihawu.jackson
 
 import com.fasterxml.jackson.databind.BeanDescription
 import com.fasterxml.jackson.databind.SerializationConfig

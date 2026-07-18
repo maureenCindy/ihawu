@@ -4,7 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.ihawu.core.policy.FieldPolicy
 import org.ihawu.core.policy.IhawuPrincipal
 import org.ihawu.core.policy.ResourcePolicyResolver
-import org.ihawu.core.serialization.IhawuModule
+import org.ihawu.jackson.IhawuModule
 import org.ihawu.spring.boot.starter.configuration.IhawuJacksonObjectMapperConfig
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner

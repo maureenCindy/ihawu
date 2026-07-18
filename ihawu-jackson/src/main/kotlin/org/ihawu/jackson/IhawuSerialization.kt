@@ -1,4 +1,4 @@
-package org.ihawu.core.serialization
+package org.ihawu.jackson
 
 /**
  * Keys for the per-call Jackson attributes that carry request context into Ihawu's masking

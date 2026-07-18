@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":ihawu-core"))
+    implementation(project(":ihawu-jackson"))
     // Add ihawu-spring-boot-starter when Spring-specific samples are needed
     // implementation(project(":ihawu-spring-boot-starter"))
     testImplementation(kotlin("test"))
