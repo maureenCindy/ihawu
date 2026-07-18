@@ -31,19 +31,23 @@ allprojects {
 subprojects {
     val subproject = this
 
-    pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
-        pluginManager.apply("org.jlleitschuh.gradle.ktlint")
-        // The API reference must only expose published, consumer-facing artifacts, so Dokka is
-        // applied to an explicit allowlist rather than every module. Excluded on purpose:
-        //   - samples:snippets / spring-boot-sample — sample code, not a consumable library
-        //     (snippets is still wired into ihawu-core's @sample resolution below, which needs
-        //     only its source path, not the Dokka plugin).
-        // The starter is documented too: Dokka 2.x isolates its own classpath in a worker, so the
-        // Jackson clash that blocked it under Dokka 1.9.x is gone. Its internal Spring wiring is
-        // marked `internal`, so the reference shows only the extension points and config surface.
-        val apiReferenceModules = setOf("ihawu-core", "ihawu-jackson", "ihawu-spring-boot-starter")
-        if (subproject.name in apiReferenceModules) {
-            pluginManager.apply("org.jetbrains.dokka")
+    // ktlint + Dokka for Kotlin modules, whether they apply the JVM or the Multiplatform plugin
+    // (ihawu-core is a KMP module; the rest are JVM). The API reference must only expose published,
+    // consumer-facing artifacts, so Dokka is applied to an explicit allowlist rather than every
+    // module. Excluded on purpose:
+    //   - samples:snippets / spring-boot-sample — sample code, not a consumable library
+    //     (snippets is still wired into ihawu-core's @sample resolution below, which needs only its
+    //     source path, not the Dokka plugin).
+    // The starter is documented too: Dokka 2.x isolates its own classpath in a worker, so the
+    // Jackson clash that blocked it under Dokka 1.9.x is gone. Its internal Spring wiring is marked
+    // `internal`, so the reference shows only the extension points and config surface.
+    val apiReferenceModules = setOf("ihawu-core", "ihawu-jackson", "ihawu-spring-boot-starter")
+    listOf("org.jetbrains.kotlin.jvm", "org.jetbrains.kotlin.multiplatform").forEach { kotlinPlugin ->
+        pluginManager.withPlugin(kotlinPlugin) {
+            pluginManager.apply("org.jlleitschuh.gradle.ktlint")
+            if (subproject.name in apiReferenceModules) {
+                pluginManager.apply("org.jetbrains.dokka")
+            }
         }
     }
 }
@@ -90,7 +94,9 @@ subprojects {
         val moduleDoc = file("dokka/module.md")
         extensions.configure<org.jetbrains.dokka.gradle.DokkaExtension> {
             applyIhawuBranding(brandingLogo, brandingStylesheet)
-            dokkaSourceSets.named("main") {
+            // configureEach (not named("main")) so this works for JVM modules and for ihawu-core's
+            // KMP source sets (commonMain/jvmMain/jsMain), where no "main" source set exists.
+            dokkaSourceSets.configureEach {
                 if (moduleDoc.exists()) includes.from(moduleDoc)
             }
         }
