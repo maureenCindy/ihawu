@@ -15,3 +15,4 @@ supersedes the old one.
 | [0004](0004-static-policy-configuration.md) | Supplying static masking policy from configuration | Accepted |
 | [0005](0005-hard-fail-on-unenforceable-masking-policy.md) | Hard-fail on an unenforceable masking policy | Accepted |
 | [0006](0006-serialization-neutral-masking-spi.md) | A serialization-neutral masking SPI | Accepted |
+| [0007](0007-no-logging-dependency-in-core.md) | No logging dependency in core; observability via the failure-sink SPI | Accepted |

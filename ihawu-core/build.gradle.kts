@@ -9,9 +9,9 @@ plugins {
 }
 
 dependencies {
-    // slf4j-api is currently unused (the only logger moved to ihawu-jackson with the Jackson backend);
-    // its removal + the KMP-safe logging decision are tracked in #79.
-    api("org.slf4j:slf4j-api:2.0.18")
+    // No runtime dependencies: masking failures are surfaced through the neutral MaskingFailureSink SPI
+    // (a JVM/SLF4J implementation lives in ihawu-jackson), so core stays kotlin-stdlib-only and
+    // KMP-ready. See docs/adr/0007-no-logging-dependency-in-core.md.
     testImplementation(kotlin("test"))
 }
 
