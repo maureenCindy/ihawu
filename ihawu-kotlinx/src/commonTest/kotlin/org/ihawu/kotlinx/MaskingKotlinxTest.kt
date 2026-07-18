@@ -299,7 +299,11 @@ class MaskingKotlinxTest {
         val openJson = Json { serializersModule = openModule }
         val zooRegistry = maskingRegistry(Zoo.serializer() to "zoo", Dog.serializer() to "animal")
         val zooSer = maskingSerializer(Zoo.serializer(), engine, zooRegistry, serializersModule = openModule)
-        val out = openJson.parseToJsonElement(IhawuKotlinxJson.encodeToString(openJson, principal, zooSer, Zoo("z1", Dog("top-secret")))).jsonObject
+        val out =
+            openJson
+                .parseToJsonElement(
+                    IhawuKotlinxJson.encodeToString(openJson, principal, zooSer, Zoo("z1", Dog("top-secret"))),
+                ).jsonObject
         assertEquals("z1", out["id"]?.jsonPrimitive?.content)
         val resident = out["resident"]!!.jsonObject
         assertEquals("dog", resident["type"]?.jsonPrimitive?.content) // discriminator preserved
@@ -309,7 +313,8 @@ class MaskingKotlinxTest {
     @Test
     fun openPolymorphicSubtypeMasksInsideList() {
         val openJson = Json { serializersModule = openModule }
-        val listSer = maskingSerializer(ListSerializer(PolymorphicSerializer(Animal::class)), engine, animalRegistry, serializersModule = openModule)
+        val listSer =
+            maskingSerializer(ListSerializer(PolymorphicSerializer(Animal::class)), engine, animalRegistry, serializersModule = openModule)
         val value = listOf<Animal>(Dog("a"), Dog("b"))
         val out = openJson.parseToJsonElement(IhawuKotlinxJson.encodeToString(openJson, principal, listSer, value)).jsonArray
         assertEquals(2, out.size)

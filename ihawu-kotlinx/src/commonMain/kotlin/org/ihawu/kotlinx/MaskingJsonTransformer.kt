@@ -110,8 +110,7 @@ class MaskingJsonTransformer<T>(
     private fun resolveSubtype(
         desc: SerialDescriptor,
         discriminatorValue: String,
-    ): SerialDescriptor? =
-        resolveSealedSubtype(desc, discriminatorValue) ?: resolveOpenSubtype(desc, discriminatorValue)
+    ): SerialDescriptor? = resolveSealedSubtype(desc, discriminatorValue) ?: resolveOpenSubtype(desc, discriminatorValue)
 
     private fun maskPolymorphicObject(
         obj: JsonObject,
