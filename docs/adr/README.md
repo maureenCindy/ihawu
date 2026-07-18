@@ -17,3 +17,4 @@ supersedes the old one.
 | [0006](0006-serialization-neutral-masking-spi.md) | A serialization-neutral masking SPI | Accepted |
 | [0007](0007-no-logging-dependency-in-core.md) | No logging dependency in core; observability via the failure-sink SPI | Accepted |
 | [0008](0008-kotlinx-serialization-masking.md) | Masking on kotlinx.serialization (JsonTransformingSerializer + registry, thread-local context) | Accepted |
+| [0009](0009-ktor-adapter.md) | The Ktor adapter: a custom ContentConverter + a coroutine-bridge per-call context | Accepted |

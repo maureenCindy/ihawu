@@ -141,6 +141,11 @@ JS) backend: register a masking serializer per `@IhawuResource` type and encode 
 It reuses the same neutral engine, so masking behaves identically — see
 [ADR 0008](docs/adr/0008-kotlinx-serialization-masking.md) for its design and performance tradeoffs.
 
+On Ktor? `org.ihawu:ihawu-ktor` gives Ktor apps the same zero-wiring experience as the Spring Boot
+starter: a single `install(IhawuKtor) { … }` masks every `@IhawuResource` response per the caller's
+role. It builds on `ihawu-kotlinx` and reuses the same neutral engine — see
+[ADR 0009](docs/adr/0009-ktor-adapter.md) and the runnable `samples/ktor-sample`.
+
 > **Migrating from 0.2.0.** The Jackson engine moved out of `ihawu-core` into a new `ihawu-jackson`
 > artifact, so `ihawu-core` itself is now serialization-neutral. Direct `ihawu-core` users who registered
 > `IhawuModule` — or loaded config via `RoleBasedResourcePolicyResolver.fromJson` (now
