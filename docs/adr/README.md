@@ -20,3 +20,4 @@ supersedes the old one.
 | [0009](0009-ktor-adapter.md) | The Ktor adapter: a custom ContentConverter + a coroutine-bridge per-call context | Accepted |
 | [0010](0010-sealed-polymorphic-kotlinx-masking.md) | Sealed polymorphic `@IhawuResource` masking on kotlinx (supersedes ADR 0008's sealed limitation) | Accepted |
 | [0011](0011-configurable-fail-request-on-resolver-error.md) | Configurable `fail-request` on a resolver-error, on the neutral SPI | Accepted |
+| [0012](0012-boot4-jackson3-strategy.md) | Spring Boot 4 / Jackson 3 strategy for 1.0 (ship 1.0 on the current stack; additive artifacts in 1.1) | Accepted |
