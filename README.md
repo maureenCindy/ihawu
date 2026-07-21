@@ -64,7 +64,10 @@ directions.
 * **No Reflection on the Hot Path:** Property writers are wrapped once per type, while Jackson builds that type's
 serializer — not per request. Policies are resolved once per (call, resource) and memoized for the rest of the write,
 so a response containing a thousand instances of a resource resolves its policy once. There is no runtime reflection
-on the serialization path. (No published benchmark yet — see #102.)
+on the serialization path. JMH numbers are published in
+[ADR 0008](docs/adr/0008-kotlinx-serialization-masking.md#performance): masking costs roughly 3× plain
+Jackson throughput on a representative payload (~2.5 µs/op absolute); reproduce with the
+[`benchmark`](benchmark/README.md) module.
 
 ---
 

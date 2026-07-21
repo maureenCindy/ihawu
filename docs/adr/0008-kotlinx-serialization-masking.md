@@ -77,6 +77,34 @@ expected cost of materialising the whole element tree before rewriting it. That 
 masking**; if it ever bites on a hot path, the deferred custom-`Encoder` approach is the lever. Numbers are
 directional (nanoTime, warm JVM); a future JMH run is authoritative.
 
+> **Update — 2026-07-21 (#102): authoritative JMH numbers.** The table above is superseded by the JMH
+> `benchmark` module (JMH 1.37, `-prof gc`, 2 forks × 5×1s warmup + 5×1s measurement; Intel i7-7820HQ
+> 2.9 GHz, Corretto JDK 17.0.9). `small` = one employee (masked fields, a nested resource, a map of
+> resources); `large` = a list of 100. Plain-serialization baselines included — the number the old harness
+> could not give.
+>
+> | Benchmark | small ops/s | small B/op | large ops/s | large B/op |
+> | --- | --- | --- | --- | --- |
+> | `plainJackson` | 1,156,948 ± 46,624 | 800 | 14,637 ± 322 | 21,928 |
+> | `ihawuJackson` | 397,886 ± 89,357 | 2,864 | 4,277 ± 3,276 † | 169,832 |
+> | `plainKotlinx` | 1,174,631 ± 25,564 | 480 | 11,866 ± 472 | 26,392 |
+> | `ihawuKotlinx` | 233,909 ± 22,945 | 6,472 | 2,623 ± 44 | 573,872 |
+>
+> † wide interval (fork variance); treat that cell as indicative.
+>
+> What the JMH run corrects and confirms:
+> - **The cross-backend gap is smaller than the interim numbers claimed:** masked kotlinx is **~1.6–1.7×**
+>   slower than masked Jackson (not 2–2.5×), allocating ~2.3× (small) to ~3.4× (large) more.
+> - **The interim allocation figures were accurate** (2.9 KB / 6.6 KB per op ≈ 2,864 / 6,472 B/op).
+> - **New, from the baselines:** masking is not free on either backend — `ihawuJackson` runs ~2.9–3.4×
+>   slower than plain Jackson and allocates ~2 KB/op over it (so "no hot-path allocation" above overstated
+>   the streaming path; the *decision* layer allocates), and `ihawuKotlinx` runs ~4.5–5× slower than plain
+>   kotlinx. Absolute cost stays small (~2.5 µs/op Jackson, ~4.3 µs/op kotlinx on the small payload).
+> - The tradeoff and the lever are unchanged: the kotlinx tree rewrite buys non-JVM masking; the deferred
+>   custom-`Encoder` remains the option if it ever matters on a hot path.
+>
+> Reproduce with `./gradlew :benchmark:jmh` (see `benchmark/README.md`).
+
 ## Consequences
 
 | Concern | Outcome |
