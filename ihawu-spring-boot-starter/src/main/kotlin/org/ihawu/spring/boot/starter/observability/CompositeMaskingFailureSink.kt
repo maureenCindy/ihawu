@@ -1,6 +1,6 @@
 package org.ihawu.spring.boot.starter.observability
 
-import org.ihawu.core.masking.FailReason
+import org.ihawu.core.masking.MaskingFailure
 import org.ihawu.core.masking.MaskingFailureSink
 
 /**
@@ -10,12 +10,7 @@ import org.ihawu.core.masking.MaskingFailureSink
 internal class CompositeMaskingFailureSink(
     private vararg val sinks: MaskingFailureSink,
 ) : MaskingFailureSink {
-    override fun onFailClosed(
-        resource: String,
-        field: String?,
-        reason: FailReason,
-        cause: Throwable?,
-    ) {
-        sinks.forEach { it.onFailClosed(resource, field, reason, cause) }
+    override fun onFailClosed(failure: MaskingFailure) {
+        sinks.forEach { it.onFailClosed(failure) }
     }
 }

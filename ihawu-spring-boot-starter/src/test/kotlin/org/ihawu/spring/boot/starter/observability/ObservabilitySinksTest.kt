@@ -3,6 +3,7 @@ package org.ihawu.spring.boot.starter.observability
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.assertj.core.api.Assertions.assertThat
 import org.ihawu.core.masking.FailReason
+import org.ihawu.core.masking.MaskingFailure
 import org.ihawu.core.masking.MaskingFailureSink
 import kotlin.test.Test
 
@@ -12,9 +13,9 @@ class ObservabilitySinksTest {
         val registry = SimpleMeterRegistry()
         val sink = MicrometerMaskingFailureSink(registry)
 
-        sink.onFailClosed("employee", null, FailReason.RESOLVER_ERROR, RuntimeException("down"))
-        sink.onFailClosed("employee", null, FailReason.RESOLVER_ERROR, RuntimeException("down"))
-        sink.onFailClosed("account", "ssn", FailReason.HIDE_NON_NULLABLE, null)
+        sink.onFailClosed(MaskingFailure("employee", FailReason.RESOLVER_ERROR, cause = RuntimeException("down")))
+        sink.onFailClosed(MaskingFailure("employee", FailReason.RESOLVER_ERROR, cause = RuntimeException("down")))
+        sink.onFailClosed(MaskingFailure("account", FailReason.HIDE_NON_NULLABLE, field = "ssn"))
 
         assertThat(
             registry.counter("ihawu.masking.failures", "resource", "employee", "reason", "RESOLVER_ERROR").count(),
@@ -27,10 +28,10 @@ class ObservabilitySinksTest {
     @Test
     fun `composite sink fans out to every delegate in order`() {
         val calls = mutableListOf<String>()
-        val a = MaskingFailureSink { resource, _, _, _ -> calls += "a:$resource" }
-        val b = MaskingFailureSink { resource, _, _, _ -> calls += "b:$resource" }
+        val a = MaskingFailureSink { failure -> calls += "a:${failure.resource}" }
+        val b = MaskingFailureSink { failure -> calls += "b:${failure.resource}" }
 
-        CompositeMaskingFailureSink(a, b).onFailClosed("employee", null, FailReason.RESOLVER_ERROR, null)
+        CompositeMaskingFailureSink(a, b).onFailClosed(MaskingFailure("employee", FailReason.RESOLVER_ERROR))
 
         assertThat(calls).containsExactly("a:employee", "b:employee")
     }

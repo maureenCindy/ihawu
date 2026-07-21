@@ -11,6 +11,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.serialization.Serializable
 import org.ihawu.core.annotation.IhawuResource
 import org.ihawu.core.masking.FailReason
+import org.ihawu.core.masking.MaskingFailure
 import org.ihawu.core.masking.MaskingFailureSink
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,9 +29,9 @@ class ObservabilitySinksTest {
         val registry = SimpleMeterRegistry()
         val sink = MicrometerMaskingFailureSink(registry)
 
-        sink.onFailClosed("employee", null, FailReason.RESOLVER_ERROR, RuntimeException("down"))
-        sink.onFailClosed("employee", null, FailReason.RESOLVER_ERROR, RuntimeException("down"))
-        sink.onFailClosed("account", "ssn", FailReason.HIDE_NON_NULLABLE, null)
+        sink.onFailClosed(MaskingFailure("employee", FailReason.RESOLVER_ERROR, cause = RuntimeException("down")))
+        sink.onFailClosed(MaskingFailure("employee", FailReason.RESOLVER_ERROR, cause = RuntimeException("down")))
+        sink.onFailClosed(MaskingFailure("account", FailReason.HIDE_NON_NULLABLE, field = "ssn"))
 
         assertEquals(
             2.0,
@@ -45,10 +46,10 @@ class ObservabilitySinksTest {
     @Test
     fun `composite sink fans out to every delegate in order`() {
         val calls = mutableListOf<String>()
-        val a = MaskingFailureSink { resource, _, _, _ -> calls += "a:$resource" }
-        val b = MaskingFailureSink { resource, _, _, _ -> calls += "b:$resource" }
+        val a = MaskingFailureSink { failure -> calls += "a:${failure.resource}" }
+        val b = MaskingFailureSink { failure -> calls += "b:${failure.resource}" }
 
-        CompositeMaskingFailureSink(a, b).onFailClosed("account", null, FailReason.NO_PRINCIPAL, null)
+        CompositeMaskingFailureSink(a, b).onFailClosed(MaskingFailure("account", FailReason.NO_PRINCIPAL))
 
         assertEquals(listOf("a:account", "b:account"), calls)
     }

@@ -24,7 +24,7 @@ import org.ihawu.core.policy.ResourcePolicyResolver
  */
 public class DefaultMaskingEngine(
     private val resolver: ResourcePolicyResolver,
-    private val onFailClosed: MaskingFailureSink = MaskingFailureSink { _, _, _, _ -> },
+    private val onFailClosed: MaskingFailureSink = MaskingFailureSink { _ -> },
     private val resolverErrorMode: ResolverErrorMode = ResolverErrorMode.MASK_ALL,
 ) : MaskingEngine {
     override fun decide(
@@ -45,13 +45,13 @@ public class DefaultMaskingEngine(
     ): Resolved {
         val principal =
             context.principal ?: run {
-                onFailClosed.onFailClosed(resource, null, FailReason.NO_PRINCIPAL, null)
+                onFailClosed.onFailClosed(MaskingFailure(resource = resource, reason = FailReason.NO_PRINCIPAL))
                 return Resolved.MaskAll(FailReason.NO_PRINCIPAL)
             }
         return try {
             Resolved.Ok(resolver.resolve(principal, resource).associateBy { it.field })
         } catch (ex: Exception) {
-            onFailClosed.onFailClosed(resource, null, FailReason.RESOLVER_ERROR, ex)
+            onFailClosed.onFailClosed(MaskingFailure(resource = resource, reason = FailReason.RESOLVER_ERROR, cause = ex))
             when (resolverErrorMode) {
                 ResolverErrorMode.MASK_ALL -> Resolved.MaskAll(FailReason.RESOLVER_ERROR)
                 ResolverErrorMode.FAIL_REQUEST -> throw MaskingResolverException(resource, ex)
@@ -71,14 +71,14 @@ public class DefaultMaskingEngine(
                 if (capability.omittable) {
                     MaskingDecision.Omit()
                 } else {
-                    onFailClosed.onFailClosed(resource, field, FailReason.HIDE_NON_NULLABLE, null)
+                    onFailClosed.onFailClosed(MaskingFailure(resource = resource, reason = FailReason.HIDE_NON_NULLABLE, field = field))
                     MaskingDecision.Omit(FailReason.HIDE_NON_NULLABLE)
                 }
             MaskingStrategy.REDACT -> {
                 val placeholder = policy.placeholder ?: policy.strategy.defaultPlaceholder ?: ""
                 capability.redactDecision(placeholder).also {
                     if (it is MaskingDecision.Omit && it.reason == FailReason.REDACT_UNSAFE) {
-                        onFailClosed.onFailClosed(resource, field, FailReason.REDACT_UNSAFE, null)
+                        onFailClosed.onFailClosed(MaskingFailure(resource = resource, reason = FailReason.REDACT_UNSAFE, field = field))
                     }
                 }
             }

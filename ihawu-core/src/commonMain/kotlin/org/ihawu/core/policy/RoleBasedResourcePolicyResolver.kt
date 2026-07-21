@@ -11,8 +11,8 @@ package org.ihawu.core.policy
  *
  * Resolution semantics:
  * - **Union across roles** — the field policies of every role the principal holds are combined.
- * - **Most-restrictive-wins** — when two roles mask the same field, the strategy with the higher
- *   [org.ihawu.core.masking.MaskingStrategy.securityLevel] is kept (e.g. `HIDE` outranks `REDACT`).
+ * - **Most-restrictive-wins** — when two roles mask the same field, the stricter
+ *   [org.ihawu.core.masking.MaskingStrategy] is kept (e.g. `HIDE` outranks `REDACT`).
  * - **Deterministic** — ties between equal strategies are broken by role-name order, so the result
  *   never depends on [Set] iteration order.
  * - **Fail-open on absence** — an unknown resource, a role with no configured policy, or a principal
@@ -21,13 +21,13 @@ package org.ihawu.core.policy
  * Rules are supplied directly as a [List] of [ResourcePolicy]. To load them from JSON configuration
  * instead, use `JacksonPolicyConfig.fromJson` in the `ihawu-jackson` module.
  *
- * @property resourcePolicies The static `resource -> role -> field policies` rules to resolve against.
+ * @param resourcePolicies The static `resource -> role -> field policies` rules to resolve against.
  * @sample org.ihawu.samples.policy.resolvePoliciesForRole
  * @sample org.ihawu.samples.policy.mostRestrictiveStrategyWinsAcrossRoles
  * @see ResourcePolicy
  */
 public class RoleBasedResourcePolicyResolver(
-    public val resourcePolicies: List<ResourcePolicy>,
+    private val resourcePolicies: List<ResourcePolicy>,
 ) : ResourcePolicyResolver {
     override fun resolve(
         principal: IhawuPrincipal,

@@ -9,13 +9,8 @@ package org.ihawu.core.masking
  * failure-listener with metrics and a configurable fail-request mode is planned to build on this seam.
  *
  * Resource-level failures ([FailReason.NO_PRINCIPAL], [FailReason.RESOLVER_ERROR]) fire once per
- * (call, resource) with a `null` [field]; per-field failures fire with the field name.
+ * (call, resource) with a `null` [MaskingFailure.field]; per-field failures fire with the field name.
  */
 public fun interface MaskingFailureSink {
-    public fun onFailClosed(
-        resource: String,
-        field: String?,
-        reason: FailReason,
-        cause: Throwable?,
-    )
+    public fun onFailClosed(failure: MaskingFailure)
 }

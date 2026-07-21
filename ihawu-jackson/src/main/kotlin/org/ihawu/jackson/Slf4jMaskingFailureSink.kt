@@ -1,6 +1,7 @@
 package org.ihawu.jackson
 
 import org.ihawu.core.masking.FailReason
+import org.ihawu.core.masking.MaskingFailure
 import org.ihawu.core.masking.MaskingFailureSink
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -14,25 +15,20 @@ import org.slf4j.LoggerFactory
  * logging dependency.
  */
 public class Slf4jMaskingFailureSink : MaskingFailureSink {
-    override fun onFailClosed(
-        resource: String,
-        field: String?,
-        reason: FailReason,
-        cause: Throwable?,
-    ) {
-        when (reason) {
+    override fun onFailClosed(failure: MaskingFailure) {
+        when (failure.reason) {
             FailReason.NO_PRINCIPAL ->
                 log.warn(
                     "No IhawuPrincipal attached to serialization call, serialization failing closed for resource '{}'. " +
                         "Attach one via ObjectWriter.withAttribute(IhawuSerialization.PRINCIPAL, principal).",
-                    resource,
+                    failure.resource,
                 )
             FailReason.RESOLVER_ERROR ->
-                log.error("Ihawu masking failed for resource '{}', serialization failing closed", resource, cause)
+                log.error("Ihawu masking failed for resource '{}', serialization failing closed", failure.resource, failure.cause)
             FailReason.HIDE_NON_NULLABLE ->
-                log.error("Ihawu HIDE on required field '{}.{}'; omitting (fail-closed)", resource, field)
+                log.error("Ihawu HIDE on required field '{}.{}'; omitting (fail-closed)", failure.resource, failure.field)
             FailReason.REDACT_UNSAFE ->
-                log.error("Ihawu REDACT on non-nullable non-String '{}.{}'; omitting (fail-closed)", resource, field)
+                log.error("Ihawu REDACT on non-nullable non-String '{}.{}'; omitting (fail-closed)", failure.resource, failure.field)
         }
     }
 

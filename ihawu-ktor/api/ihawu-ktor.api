@@ -1,6 +1,6 @@
 public final class org/ihawu/ktor/CompositeMaskingFailureSink : org/ihawu/core/masking/MaskingFailureSink {
 	public fun <init> ([Lorg/ihawu/core/masking/MaskingFailureSink;)V
-	public fun onFailClosed (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/FailReason;Ljava/lang/Throwable;)V
+	public fun onFailClosed (Lorg/ihawu/core/masking/MaskingFailure;)V
 }
 
 public final class org/ihawu/ktor/IhawuKtorConfig {
@@ -31,6 +31,6 @@ public final class org/ihawu/ktor/MaskingContentConverter : io/ktor/serializatio
 
 public final class org/ihawu/ktor/MicrometerMaskingFailureSink : org/ihawu/core/masking/MaskingFailureSink {
 	public fun <init> (Lio/micrometer/core/instrument/MeterRegistry;)V
-	public fun onFailClosed (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/FailReason;Ljava/lang/Throwable;)V
+	public fun onFailClosed (Lorg/ihawu/core/masking/MaskingFailure;)V
 }
 

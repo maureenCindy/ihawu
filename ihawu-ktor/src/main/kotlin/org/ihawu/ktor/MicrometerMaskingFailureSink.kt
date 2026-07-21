@@ -2,6 +2,7 @@ package org.ihawu.ktor
 
 import io.micrometer.core.instrument.MeterRegistry
 import org.ihawu.core.masking.FailReason
+import org.ihawu.core.masking.MaskingFailure
 import org.ihawu.core.masking.MaskingFailureSink
 
 /**
@@ -22,12 +23,7 @@ import org.ihawu.core.masking.MaskingFailureSink
 public class MicrometerMaskingFailureSink(
     private val registry: MeterRegistry,
 ) : MaskingFailureSink {
-    override fun onFailClosed(
-        resource: String,
-        field: String?,
-        reason: FailReason,
-        cause: Throwable?,
-    ) {
-        registry.counter("ihawu.masking.failures", "resource", resource, "reason", reason.name).increment()
+    override fun onFailClosed(failure: MaskingFailure) {
+        registry.counter("ihawu.masking.failures", "resource", failure.resource, "reason", failure.reason.name).increment()
     }
 }

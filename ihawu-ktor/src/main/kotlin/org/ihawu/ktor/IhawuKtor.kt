@@ -40,7 +40,7 @@ public class IhawuKtorConfig {
     public var json: Json = Json
 
     /** Notified on each fail-closed drop; defaults to a no-op so the adapter needs no logger. */
-    public var onFailClosed: MaskingFailureSink = MaskingFailureSink { _, _, _, _ -> }
+    public var onFailClosed: MaskingFailureSink = MaskingFailureSink { _ -> }
 
     /**
      * How a policy-resolver failure (a policy-store outage or misconfiguration) is handled. Defaults to

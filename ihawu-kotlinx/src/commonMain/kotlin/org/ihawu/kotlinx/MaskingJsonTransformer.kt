@@ -38,7 +38,7 @@ import org.ihawu.core.masking.MaskingEngine
  *
  * The cost vs the Jackson backend: this materialises the whole element tree before rewriting it.
  */
-public class MaskingJsonTransformer<T>(
+internal class MaskingJsonTransformer<T>(
     private val delegate: KSerializer<T>,
     private val engine: MaskingEngine,
     private val registry: Map<String, String>,
