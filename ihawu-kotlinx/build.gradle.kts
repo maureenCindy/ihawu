@@ -12,6 +12,7 @@ plugins {
 // The kotlinx.serialization backend for Ihawu masking. Multiplatform (jvm + js), so masking runs on
 // non-JVM targets too — the payoff of the serialization-neutral core (ADR 0008).
 kotlin {
+    explicitApi() // every public declaration is deliberate (#118, road to 1.0)
     jvm()
     js { nodejs() }
     jvmToolchain(17)

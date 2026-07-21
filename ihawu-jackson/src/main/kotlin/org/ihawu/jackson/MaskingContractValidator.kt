@@ -12,7 +12,7 @@ import org.ihawu.core.policy.FieldPolicy
  * @property field The field the policy masks.
  * @property reason A human-readable explanation, phrased as remediation.
  */
-data class MaskingContractViolation(
+public data class MaskingContractViolation(
     val resource: String,
     val field: String,
     val reason: String,
@@ -34,7 +34,7 @@ data class MaskingContractViolation(
  * - a policy whose field is not a serialized property of the resource, which masks nothing and so
  *   silently leaves a sensitive field exposed (the under-masking failure mode of ADR 0004).
  */
-object MaskingContractValidator {
+public object MaskingContractValidator {
     /**
      * @param mapper The application's mapper, used to introspect [resourceType] the same way masking
      *   will at runtime.
@@ -43,7 +43,7 @@ object MaskingContractValidator {
      * @param policies The field policies to check (typically every role's rules for [resource]).
      * @return the contract violations; empty means every matched policy is type-safe.
      */
-    fun validate(
+    public fun validate(
         mapper: ObjectMapper,
         resource: String,
         resourceType: Class<*>,

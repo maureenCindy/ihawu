@@ -32,6 +32,7 @@ tasks.named<Jar>("jar") {
 }
 
 kotlin {
+    explicitApi() // every public declaration is deliberate (#118, road to 1.0)
     jvmToolchain(17)
 }
 

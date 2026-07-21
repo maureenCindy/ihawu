@@ -26,8 +26,8 @@ package org.ihawu.core.policy
  * @sample org.ihawu.samples.policy.mostRestrictiveStrategyWinsAcrossRoles
  * @see ResourcePolicy
  */
-class RoleBasedResourcePolicyResolver(
-    val resourcePolicies: List<ResourcePolicy>,
+public class RoleBasedResourcePolicyResolver(
+    public val resourcePolicies: List<ResourcePolicy>,
 ) : ResourcePolicyResolver {
     override fun resolve(
         principal: IhawuPrincipal,

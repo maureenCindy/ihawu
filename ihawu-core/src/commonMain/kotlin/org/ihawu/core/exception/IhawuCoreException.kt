@@ -11,7 +11,7 @@ package org.ihawu.core.exception
  * @property message A human-readable description of what went wrong.
  * @property cause The underlying exception that triggered this error, if any.
  */
-class IhawuCoreException(
+public class IhawuCoreException(
     override val message: String,
     override val cause: Throwable? = null,
 ) : RuntimeException(message, cause)

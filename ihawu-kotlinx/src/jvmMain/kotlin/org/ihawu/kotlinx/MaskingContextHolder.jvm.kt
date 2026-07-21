@@ -19,4 +19,4 @@ internal actual var maskingContext: MaskingContext?
  * withContext(maskingContextElement(principal)) { json.encodeToString(serializer, value) }
  * ```
  */
-fun maskingContextElement(principal: IhawuPrincipal?): CoroutineContext = holder.asContextElement(SimpleMaskingContext(principal))
+public fun maskingContextElement(principal: IhawuPrincipal?): CoroutineContext = holder.asContextElement(SimpleMaskingContext(principal))

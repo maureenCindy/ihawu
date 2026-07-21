@@ -13,7 +13,7 @@ package org.ihawu.core.policy
  * @see RoleBasedResourcePolicyResolver
  * @see CachingResourcePolicyResolver
  */
-interface ResourcePolicyResolver {
+public interface ResourcePolicyResolver {
     /**
      * Resolves the [resource] field policies that apply when [principal] requests [resource].
      *
@@ -21,7 +21,7 @@ interface ResourcePolicyResolver {
      * @param resource the name of the resource whose field policies should be resolved
      * @return [FieldPolicy] list defining which fields are masked
      */
-    fun resolve(
+    public fun resolve(
         principal: IhawuPrincipal,
         resource: String,
     ): List<FieldPolicy>

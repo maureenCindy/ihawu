@@ -30,7 +30,7 @@ import java.io.InputStream
  *
  * @sample org.ihawu.samples.policy.loadResolverFromJson
  */
-object JacksonPolicyConfig {
+public object JacksonPolicyConfig {
     private val mapper = ObjectMapper()
 
     /**
@@ -39,7 +39,7 @@ object JacksonPolicyConfig {
      *
      * @throws IhawuCoreException if the JSON is invalid or any rule is malformed.
      */
-    fun fromJson(json: String): RoleBasedResourcePolicyResolver = fromTree(readTree { mapper.readTree(json) })
+    public fun fromJson(json: String): RoleBasedResourcePolicyResolver = fromTree(readTree { mapper.readTree(json) })
 
     /**
      * Builds a resolver from a JSON configuration [InputStream] (e.g. a classpath resource). See the
@@ -47,7 +47,7 @@ object JacksonPolicyConfig {
      *
      * @throws IhawuCoreException if the JSON is invalid or any rule is malformed.
      */
-    fun fromJson(input: InputStream): RoleBasedResourcePolicyResolver = fromTree(readTree { mapper.readTree(input) })
+    public fun fromJson(input: InputStream): RoleBasedResourcePolicyResolver = fromTree(readTree { mapper.readTree(input) })
 
     private inline fun readTree(read: () -> JsonNode?): JsonNode =
         try {

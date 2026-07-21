@@ -33,7 +33,7 @@ import org.ihawu.kotlinx.maskingSerializer
  * @property engine The masking engine that decides each field.
  * @property registry The `serialName -> resourceName` map that drives masking recursion.
  */
-class MaskingContentConverter(
+public class MaskingContentConverter(
     private val json: Json,
     private val engine: MaskingEngine,
     private val registry: Map<String, String>,

@@ -12,6 +12,7 @@ plugins {
 // (a JVM/SLF4J implementation lives in ihawu-jackson), so commonMain stays kotlin-stdlib-only and
 // compiles to non-JVM targets. See docs/adr/0007-no-logging-dependency-in-core.md.
 kotlin {
+    explicitApi() // every public declaration is deliberate (#118, road to 1.0)
     jvm()
     js { nodejs() } // a non-JVM target: proves commonMain carries no JVM-only assumptions.
     jvmToolchain(17)

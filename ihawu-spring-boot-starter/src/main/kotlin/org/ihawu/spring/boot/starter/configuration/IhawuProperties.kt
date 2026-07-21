@@ -10,18 +10,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties
  * @property enabled Master switch for the Ihawu integration - when false the auto-config backs off.
  */
 @ConfigurationProperties(prefix = "ihawu")
-class IhawuProperties {
+public class IhawuProperties {
     /**
      * Master switch for the Ihawu integration - when false the auto-config backs off.
      */
-    var enabled: Boolean = true
+    public var enabled: Boolean = true
 
     /**
      * The static masking rules, bound from `ihawu.policies[]` and mapped to core [org.ihawu.core.policy.ResourcePolicy]
      * rules by the default provider. Defaults to empty — no rules, so nothing is masked — until the
      * application supplies them here or replaces the provider with its own bean (see ADR 0004).
      */
-    var policies: List<PolicyProperties> = emptyList()
+    public var policies: List<PolicyProperties> = emptyList()
 
     /**
      * Whether to check, at startup, that every configured masking policy can satisfy its resource's
@@ -29,14 +29,14 @@ class IhawuProperties {
      * emit schema-invalid output (e.g. `REDACT` on a non-nullable `Int`, `HIDE` on a non-nullable
      * field). Defaults to true; set false to defer such a policy to the runtime fail-closed backstop.
      */
-    var validateResourceContract: Boolean = true
+    public var validateResourceContract: Boolean = true
 
     /**
      * Packages to scan for [org.ihawu.core.annotation.IhawuResource] types during startup contract
      * validation. Defaults to empty — the application's auto-configuration base packages are used. Set
      * this when resources live outside those packages.
      */
-    var resourceBasePackages: List<String> = emptyList()
+    public var resourceBasePackages: List<String> = emptyList()
 
     /**
      * How a **policy-resolver failure** (a policy-store outage or misconfiguration) is handled, bound from
@@ -46,7 +46,7 @@ class IhawuProperties {
      * silent — see ADR 0011 for the committed-response caveat. Only the resolver-error path is affected;
      * a missing principal always masks fail-closed.
      */
-    var onPolicyFailure: ResolverErrorMode = ResolverErrorMode.MASK_ALL
+    public var onPolicyFailure: ResolverErrorMode = ResolverErrorMode.MASK_ALL
 
     /**
      * The config representation of a single field's masking rule, bound from
@@ -61,7 +61,7 @@ class IhawuProperties {
      * @property placeholder The replacement written when redacting; ignored by `HIDE`. When null, the
      * strategy's own default value is used.
      */
-    data class FieldPolicyProperties(
+    public data class FieldPolicyProperties(
         val field: String,
         val strategy: MaskingStrategy = MaskingStrategy.HIDE,
         val placeholder: String? = null,
@@ -81,7 +81,7 @@ class IhawuProperties {
      * (fail open on missing policy; see ADR 0003). Non-null here, unlike core's nullable map, so the
      * config shape is unambiguous for operators.
      */
-    data class PolicyProperties(
+    public data class PolicyProperties(
         val resource: String,
         val roles: Map<String, List<FieldPolicyProperties>> = emptyMap(),
     )

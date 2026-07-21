@@ -10,7 +10,7 @@ package org.ihawu.core.masking
  *
  * @property resource the resource whose policy could not be resolved.
  */
-class MaskingResolverException(
-    val resource: String,
+public class MaskingResolverException(
+    public val resource: String,
     override val cause: Throwable,
 ) : RuntimeException("Failed to resolve masking policy for resource '$resource'; failing the request", cause)

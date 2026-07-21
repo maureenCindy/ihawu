@@ -11,8 +11,8 @@ package org.ihawu.core.masking
  * Resource-level failures ([FailReason.NO_PRINCIPAL], [FailReason.RESOLVER_ERROR]) fire once per
  * (call, resource) with a `null` [field]; per-field failures fire with the field name.
  */
-fun interface MaskingFailureSink {
-    fun onFailClosed(
+public fun interface MaskingFailureSink {
+    public fun onFailClosed(
         resource: String,
         field: String?,
         reason: FailReason,

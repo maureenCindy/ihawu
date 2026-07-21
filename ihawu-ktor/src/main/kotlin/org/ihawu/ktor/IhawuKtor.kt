@@ -2,6 +2,7 @@ package org.ihawu.ktor
 
 import io.ktor.http.ContentType
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.call
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.install
@@ -27,19 +28,19 @@ import org.ihawu.kotlinx.maskingRegistry
  * Supply, at minimum, the field-policy source ([policies] or [policyResolver]) and the
  * [resources] registry; wire [resolvePrincipal] to your `Authentication` to identify the caller.
  */
-class IhawuKtorConfig {
+public class IhawuKtorConfig {
     /**
      * Resolves the caller for each request. The default fails closed — a `null` principal masks the
      * whole resource (`{}`), matching the other adapters. In production map your `Authentication`
      * result here, e.g. `resolvePrincipal = { it.ihawuPrincipal() }`.
      */
-    var resolvePrincipal: suspend (ApplicationCall) -> IhawuPrincipal? = { null }
+    public var resolvePrincipal: suspend (ApplicationCall) -> IhawuPrincipal? = { null }
 
     /** The JSON used to encode responses and decode request bodies. */
-    var json: Json = Json
+    public var json: Json = Json
 
     /** Notified on each fail-closed drop; defaults to a no-op so the adapter needs no logger. */
-    var onFailClosed: MaskingFailureSink = MaskingFailureSink { _, _, _, _ -> }
+    public var onFailClosed: MaskingFailureSink = MaskingFailureSink { _, _, _, _ -> }
 
     /**
      * How a policy-resolver failure (a policy-store outage or misconfiguration) is handled. Defaults to
@@ -47,18 +48,18 @@ class IhawuKtorConfig {
      * [ResolverErrorMode.FAIL_REQUEST] instead lets the error surface as a `500`, so an outage is not
      * silent (only the resolver-error path; a missing principal still masks). See ADR 0011.
      */
-    var onPolicyFailure: ResolverErrorMode = ResolverErrorMode.MASK_ALL
+    public var onPolicyFailure: ResolverErrorMode = ResolverErrorMode.MASK_ALL
 
     internal var policyResolver: ResourcePolicyResolver? = null
     internal val resourceEntries = mutableListOf<Pair<KSerializer<*>, String>>()
 
     /** Resolve field policies with a custom [ResourcePolicyResolver] (a DB, OPA, Casbin, …). */
-    fun policyResolver(resolver: ResourcePolicyResolver) {
+    public fun policyResolver(resolver: ResourcePolicyResolver) {
         policyResolver = resolver
     }
 
     /** Resolve field policies from static role-based [rules][ResourcePolicy]. */
-    fun policies(vararg rules: ResourcePolicy) {
+    public fun policies(vararg rules: ResourcePolicy) {
         policyResolver = RoleBasedResourcePolicyResolver(rules.toList())
     }
 
@@ -66,7 +67,7 @@ class IhawuKtorConfig {
      * Register each `@IhawuResource` serializer under its resource name so it masks when serialized.
      * Register nested resource types and collection element types too, so they mask when reached.
      */
-    fun resources(vararg entries: Pair<KSerializer<*>, String>) {
+    public fun resources(vararg entries: Pair<KSerializer<*>, String>) {
         resourceEntries += entries
     }
 }
@@ -87,7 +88,7 @@ class IhawuKtorConfig {
  * wraps the pipeline in the caller's masking context via the kotlinx coroutine→thread-local bridge
  * (ADR 0009), so the synchronous encode sees the principal. No principal → `{}`.
  */
-val IhawuKtor =
+public val IhawuKtor: ApplicationPlugin<IhawuKtorConfig> =
     createApplicationPlugin("IhawuKtor", ::IhawuKtorConfig) {
         val json = pluginConfig.json
         val resolvePrincipal = pluginConfig.resolvePrincipal
@@ -122,4 +123,4 @@ val IhawuKtor =
  * result, for apps whose auth provider yields an [IhawuPrincipal]. Returns `null` (fail-closed) when
  * the call is unauthenticated. Use as `resolvePrincipal = { it.ihawuPrincipal() }`.
  */
-fun ApplicationCall.ihawuPrincipal(): IhawuPrincipal? = principal<IhawuPrincipal>()
+public fun ApplicationCall.ihawuPrincipal(): IhawuPrincipal? = principal<IhawuPrincipal>()
