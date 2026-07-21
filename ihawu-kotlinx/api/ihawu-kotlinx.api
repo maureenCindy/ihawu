@@ -1,0 +1,20 @@
+public final class org/ihawu/kotlinx/IhawuKotlinxJson {
+	public static final field INSTANCE Lorg/ihawu/kotlinx/IhawuKotlinxJson;
+	public final fun encodeToString (Lkotlinx/serialization/json/Json;Lorg/ihawu/core/policy/IhawuPrincipal;Lkotlinx/serialization/SerializationStrategy;Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class org/ihawu/kotlinx/IhawuKotlinxJsonKt {
+	public static final fun maskingRegistry ([Lkotlin/Pair;)Ljava/util/Map;
+	public static final fun maskingSerializer (Lkotlinx/serialization/KSerializer;Lorg/ihawu/core/masking/MaskingEngine;Ljava/util/Map;Ljava/lang/String;Lkotlinx/serialization/modules/SerializersModule;)Lkotlinx/serialization/KSerializer;
+	public static synthetic fun maskingSerializer$default (Lkotlinx/serialization/KSerializer;Lorg/ihawu/core/masking/MaskingEngine;Ljava/util/Map;Ljava/lang/String;Lkotlinx/serialization/modules/SerializersModule;ILjava/lang/Object;)Lkotlinx/serialization/KSerializer;
+}
+
+public final class org/ihawu/kotlinx/MaskingContextHolder_jvmKt {
+	public static final fun maskingContextElement (Lorg/ihawu/core/policy/IhawuPrincipal;)Lkotlin/coroutines/CoroutineContext;
+}
+
+public final class org/ihawu/kotlinx/MaskingJsonTransformer : kotlinx/serialization/json/JsonTransformingSerializer {
+	public fun <init> (Lkotlinx/serialization/KSerializer;Lorg/ihawu/core/masking/MaskingEngine;Ljava/util/Map;Ljava/lang/String;Lkotlinx/serialization/modules/SerializersModule;)V
+	public synthetic fun <init> (Lkotlinx/serialization/KSerializer;Lorg/ihawu/core/masking/MaskingEngine;Ljava/util/Map;Ljava/lang/String;Lkotlinx/serialization/modules/SerializersModule;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+

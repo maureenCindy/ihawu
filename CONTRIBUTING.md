@@ -113,6 +113,15 @@ When you open a Pull Request (PR), our automated template will ask you to confir
 * [ ] Did you include a compiling execution test inside the `samples` module?
 * [ ] Does your pull request description contain a closing keyword linked to an active issue? (e.g., `Closes #14`).
 
+#### Changing the public API (`apiCheck` / `apiDump`)
+The public ABI of every published module is locked in checked-in `api/<module>.api` dumps, verified by
+`apiCheck` on every build (kotlinx binary-compatibility-validator). If you deliberately change the public
+surface — adding, removing, or re-signing a `public` declaration — regenerate the dumps with
+`./gradlew apiDump` and **commit the `.api` diff with your change**; the diff is the reviewable record of
+the API decision, so call it out in the PR description. A failing `apiCheck` you did not expect means an
+accidental API change: make the declaration `internal` (the modules compile under Kotlin explicit API
+mode) or restore the signature, rather than dumping over it.
+
 ### 5. Automated CI Gating
 Once your PR is submitted, GitHub Actions will fire two parallel pipelines:
 * **`verify.yml`**: Runs code compilers, checkstyle rules, and unit tests across all framework integration packages.

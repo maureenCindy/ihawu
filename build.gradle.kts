@@ -7,6 +7,21 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0" apply false
     id("org.jetbrains.kotlinx.kover") version "0.9.8" apply false
     id("com.vanniktech.maven.publish") version "0.30.0" apply false
+    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.1"
+}
+
+// Locks the public ABI of the published modules (#119, road to 1.0): each module's surface is dumped to
+// a checked-in api/<module>.api file, and apiCheck (part of `check`) fails the build on any signature
+// change until the dump is deliberately regenerated with `./gradlew apiDump` (see CONTRIBUTING.md).
+apiValidation {
+    ignoredProjects +=
+        listOf(
+            // Unpublished modules carry no API contract.
+            "snippets",
+            "spring-boot-sample",
+            "ktor-sample",
+            "benchmark",
+        )
 }
 
 allprojects {
