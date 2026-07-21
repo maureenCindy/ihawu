@@ -6,7 +6,7 @@ plugins {
     kotlin("kapt")
     kotlin("plugin.spring")
     `java-library`
-    id("org.springframework.boot") version "3.5.16"
+    id("org.springframework.boot") version "4.1.0"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.vanniktech.maven.publish")
 }
