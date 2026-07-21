@@ -18,12 +18,12 @@ The starter pulls `ihawu-core` transitively, so it is the only dependency you ad
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("org.ihawu:ihawu-spring-boot-starter:0.1.0")
+implementation("org.ihawu:ihawu-spring-boot-starter:0.4.1")
 ```
 
 **Gradle (Groovy DSL)**
 ```groovy
-implementation "org.ihawu:ihawu-spring-boot-starter:0.1.0"
+implementation "org.ihawu:ihawu-spring-boot-starter:0.4.1"
 ```
 
 **Maven**
@@ -31,7 +31,7 @@ implementation "org.ihawu:ihawu-spring-boot-starter:0.1.0"
 <dependency>
     <groupId>org.ihawu</groupId>
     <artifactId>ihawu-spring-boot-starter</artifactId>
-    <version>0.1.0</version>
+    <version>0.4.1</version>
 </dependency>
 ```
 

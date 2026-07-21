@@ -64,7 +64,7 @@ directions.
 * **No Reflection on the Hot Path:** Property writers are wrapped once per type, while Jackson builds that type's
 serializer — not per request. Policies are resolved once per (call, resource) and memoized for the rest of the write,
 so a response containing a thousand instances of a resource resolves its policy once. There is no runtime reflection
-on the serialization path. (No published benchmark yet — see #71.)
+on the serialization path. (No published benchmark yet — see #102.)
 
 ---
 
@@ -91,11 +91,11 @@ Full comparison — including masking in the database, which is stronger than Ih
 
 ## What Ihawu Does Not Protect
 
-Ihawu enforces at **one** exit: an `ObjectMapper` with `IhawuModule` registered, serializing a call that has an
-`IhawuPrincipal` attached. Your object still travels through the application in full, and nothing masks it on any
-other path out of the process. It is **not** masked when it is written to a log, published to Kafka, written to a
-cache, exported to CSV, rendered into a server-side template, or serialized by a second `ObjectMapper` without the
-module registered.
+Ihawu enforces at **one** exit: a serializer with Ihawu's masking installed — a Jackson `ObjectMapper` with
+`IhawuModule`, or a `kotlinx.serialization` masking serializer — writing a value with an `IhawuPrincipal` attached.
+Your object still travels through the application in full, and nothing masks it on any other path out of the
+process. It is **not** masked when it is written to a log, published to Kafka, written to a cache, exported to CSV,
+rendered into a server-side template, or serialized by a second serializer without Ihawu's masking installed.
 
 That is inherent to enforcing at the serialization boundary, and it is a deliberate trade — masking where the
 response is written is what lets your controllers return whole, truthful domain objects. But it means Ihawu masks
@@ -115,12 +115,12 @@ Add the Spring Boot starter — it pulls `ihawu-core` transitively, so it's the 
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("org.ihawu:ihawu-spring-boot-starter:0.1.0")
+implementation("org.ihawu:ihawu-spring-boot-starter:0.4.1")
 ```
 
 **Gradle (Groovy DSL)**
 ```groovy
-implementation "org.ihawu:ihawu-spring-boot-starter:0.1.0"
+implementation "org.ihawu:ihawu-spring-boot-starter:0.4.1"
 ```
 
 **Maven**
@@ -128,7 +128,7 @@ implementation "org.ihawu:ihawu-spring-boot-starter:0.1.0"
 <dependency>
     <groupId>org.ihawu</groupId>
     <artifactId>ihawu-spring-boot-starter</artifactId>
-    <version>0.1.0</version>
+    <version>0.4.1</version>
 </dependency>
 ```
 
@@ -266,7 +266,7 @@ be 100% accurate and functional forever.
 
 ## Roadmap
 
-Work is tracked in [GitHub milestones](https://github.com/maureenCindy/ihawu/milestones). The first three shipped, in order:
+Work is tracked in [GitHub milestones](https://github.com/maureenCindy/ihawu/milestones). The first four shipped, in order:
 
 * **Docs: claims match behaviour** — every claim in the README, CONTRIBUTING, and the docs site is either true or
   removed. No feature described that does not exist.
@@ -284,8 +284,14 @@ JS**. Jackson masking moved to `ihawu-jackson`; `kotlinx.serialization` masking 
 engine, since kotlinx has no equivalent of Jackson's `BeanSerializerModifier`. The full explanation is on the docs
 site: [Multiplatform](https://ihawu.org/core/overview/#multiplatform).
 
-**Next — 0.4.0:** OPEN polymorphic masking on kotlinx, observable/configurable fail-closed on the SPI, and Dokka
-versioned docs. Tracked on the [0.4.0 milestone](https://github.com/maureenCindy/ihawu/milestone/5).
+* **0.4.0 — Polymorphism & observability** — polymorphic `@IhawuResource` masking (sealed **and** OPEN) on
+  the kotlinx backend ([ADR 0010](docs/adr/0010-sealed-polymorphic-kotlinx-masking.md)), and observable,
+  configurable fail-closed: Micrometer `ihawu.masking.failures` metrics and an opt-in `fail-request` mode
+  ([ADR 0011](docs/adr/0011-configurable-fail-request-on-resolver-error.md)). All additive. (0.4.1 patches
+  the Spring Boot starter's metric auto-registration.)
+
+Further work — a JMH benchmark, and a Dokka version dropdown once the API stabilises at 1.0 — is tracked in
+the [issues](https://github.com/maureenCindy/ihawu/issues).
 
 ---
 
