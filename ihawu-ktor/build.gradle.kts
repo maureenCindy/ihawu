@@ -12,7 +12,7 @@ plugins {
 // The Ktor server adapter for Ihawu masking. Ktor server plugins are JVM-only, so this is a plain
 // kotlin("jvm") module built on the multiplatform kotlinx backend (ADR 0009).
 val ktorVersion = "3.2.3"
-val micrometerVersion = "1.13.6"
+val micrometerVersion = "1.17.0"
 
 dependencies {
     api(project(":ihawu-kotlinx"))
