@@ -6,7 +6,7 @@ plugins {
 
 description = "ihawu-ktor-sample"
 
-val ktorVersion = "3.2.3"
+val ktorVersion = "3.5.1"
 
 dependencies {
     implementation(project(":ihawu-ktor"))
