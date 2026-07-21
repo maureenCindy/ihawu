@@ -22,6 +22,9 @@ apiValidation {
             "ktor-sample",
             "benchmark",
         )
+    // @ExperimentalIhawuApi declarations are outside the compatibility promise (COMPATIBILITY.md), so
+    // they are excluded from the frozen dumps — experimental churn must not require an apiDump.
+    nonPublicMarkers += "org.ihawu.core.annotation.ExperimentalIhawuApi"
 }
 
 allprojects {

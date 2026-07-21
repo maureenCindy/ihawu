@@ -1,3 +1,6 @@
+public abstract interface annotation class org/ihawu/core/annotation/ExperimentalIhawuApi : java/lang/annotation/Annotation {
+}
+
 public abstract interface annotation class org/ihawu/core/annotation/IhawuResource : java/lang/annotation/Annotation {
 	public abstract fun name ()Ljava/lang/String;
 }

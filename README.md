@@ -296,6 +296,10 @@ site: [Multiplatform](https://ihawu.org/core/overview/#multiplatform).
 Further work — a JMH benchmark, and a Dokka version dropdown once the API stabilises at 1.0 — is tracked in
 the [issues](https://github.com/maureenCindy/ihawu/issues).
 
+**On the road to 1.0**, the public API is now deliberate (Kotlin explicit API mode) and mechanically locked
+(binary-compatibility-validator); what the 1.0 promise covers — and the dependency baselines it ships on —
+is written down in [COMPATIBILITY.md](COMPATIBILITY.md).
+
 ---
 
 ## Contributing
