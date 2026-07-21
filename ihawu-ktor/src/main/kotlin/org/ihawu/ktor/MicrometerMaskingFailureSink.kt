@@ -19,7 +19,7 @@ import org.ihawu.core.masking.MaskingFailureSink
  * }
  * ```
  */
-class MicrometerMaskingFailureSink(
+public class MicrometerMaskingFailureSink(
     private val registry: MeterRegistry,
 ) : MaskingFailureSink {
     override fun onFailClosed(

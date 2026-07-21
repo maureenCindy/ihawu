@@ -9,11 +9,11 @@ package org.ihawu.jackson
  * `SerializerProvider.getAttribute`. Scoping the principal to one write call — rather than a
  * thread-bound holder — makes cross-request contamination structurally impossible.
  */
-object IhawuSerialization {
+public object IhawuSerialization {
     /**
      * Attribute key under which the current [org.ihawu.core.policy.IhawuPrincipal] is supplied for
      * the serialization call. When absent, the masking serializer fails closed and the resource
      * serializes as an empty object rather than leaking unmasked data.
      */
-    const val PRINCIPAL: String = "org.ihawu.principal"
+    public const val PRINCIPAL: String = "org.ihawu.principal"
 }

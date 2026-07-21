@@ -5,7 +5,7 @@ package org.ihawu.core.masking
  * misconfiguration. Scoped to the resolver-error path only: a missing principal always masks fail-closed
  * regardless of this mode. See [ADR 0011](../../../../../../../docs/adr/0011-configurable-fail-request-on-resolver-error.md).
  */
-enum class ResolverErrorMode {
+public enum class ResolverErrorMode {
     /** Mask the whole resource fail-closed (`{}`) and continue — the safe default; the response stays 200. */
     MASK_ALL,
 

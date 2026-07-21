@@ -20,6 +20,7 @@ java {
 }
 
 kotlin {
+    explicitApi() // every public declaration is deliberate (#118, road to 1.0)
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict", "-Xemit-jvm-type-annotations", "-java-parameters")
     }

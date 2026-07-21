@@ -9,16 +9,16 @@ import org.ihawu.core.policy.IhawuPrincipal
  * for instance, this is backed by `SerializerProvider` attributes. Scoping to a single write call
  * rather than a thread-bound holder makes cross-request contamination structurally impossible.
  */
-interface MaskingContext {
+public interface MaskingContext {
     /** The caller this write is for, or `null` — which masks the whole resource fail-closed. */
-    val principal: IhawuPrincipal?
+    public val principal: IhawuPrincipal?
 
     /**
      * Returns the value stored under [key] for this call, computing and caching it with [compute] on
      * first access. Lets the engine resolve each resource's policy at most once per call, however many
      * instances of that resource the write contains.
      */
-    fun <T : Any> memoize(
+    public fun <T : Any> memoize(
         key: String,
         compute: () -> T,
     ): T

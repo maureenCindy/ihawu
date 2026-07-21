@@ -22,7 +22,7 @@ import org.ihawu.core.policy.ResourcePolicyResolver
  * @property onFailClosed Notified on each fail-closed drop; defaults to a no-op so core needs no logger.
  * @property resolverErrorMode How a resolver failure is handled; defaults to [ResolverErrorMode.MASK_ALL].
  */
-class DefaultMaskingEngine(
+public class DefaultMaskingEngine(
     private val resolver: ResourcePolicyResolver,
     private val onFailClosed: MaskingFailureSink = MaskingFailureSink { _, _, _, _ -> },
     private val resolverErrorMode: ResolverErrorMode = ResolverErrorMode.MASK_ALL,

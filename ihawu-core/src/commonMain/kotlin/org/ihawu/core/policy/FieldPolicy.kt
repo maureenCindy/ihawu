@@ -10,7 +10,7 @@ import org.ihawu.core.masking.MaskingStrategy
  * @property placeholder The replacement written when redacting a **String** field; when null it falls
  * back to [MaskingStrategy.defaultPlaceholder]. Ignored for non-String fields, which mask to JSON null.
  */
-data class FieldPolicy(
+public data class FieldPolicy(
     val field: String,
     val strategy: MaskingStrategy,
     val placeholder: String? = null,

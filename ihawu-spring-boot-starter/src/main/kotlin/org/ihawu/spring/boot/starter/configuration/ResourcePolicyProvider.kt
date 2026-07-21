@@ -9,7 +9,7 @@ import org.ihawu.core.policy.ResourcePolicy
  * your own `ResourcePolicyProvider` bean to override. Binding the rules from `ihawu.*` configuration
  * is tracked separately (#21); for now they are supplied programmatically.
  */
-fun interface ResourcePolicyProvider {
+public fun interface ResourcePolicyProvider {
     /** @return the list of [ResourcePolicy] rules to enforce. */
-    fun getResourcePolicies(): List<ResourcePolicy>
+    public fun getResourcePolicies(): List<ResourcePolicy>
 }

@@ -10,6 +10,6 @@ package org.ihawu.core.annotation
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class IhawuResource(
+public annotation class IhawuResource(
     val name: String,
 )

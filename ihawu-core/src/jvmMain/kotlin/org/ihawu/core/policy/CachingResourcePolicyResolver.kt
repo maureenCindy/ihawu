@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @sample org.ihawu.samples.policy.cacheResolvesOncePerScope
  * @see ResourcePolicyResolver
  */
-class CachingResourcePolicyResolver(
+public class CachingResourcePolicyResolver(
     private val delegate: ResourcePolicyResolver,
 ) : ResourcePolicyResolver {
     private val cache = ConcurrentHashMap<CacheKey, List<FieldPolicy>>()

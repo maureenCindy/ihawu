@@ -14,7 +14,7 @@ import org.ihawu.core.policy.IhawuPrincipal
  * name. Register every resource type — including nested ones and collection element types — so they mask
  * themselves when reached.
  */
-fun maskingRegistry(vararg entries: Pair<KSerializer<*>, String>): Map<String, String> =
+public fun maskingRegistry(vararg entries: Pair<KSerializer<*>, String>): Map<String, String> =
     entries.associate { (serializer, name) -> serializer.descriptor.serialName to name }
 
 /**
@@ -30,7 +30,7 @@ fun maskingRegistry(vararg entries: Pair<KSerializer<*>, String>): Map<String, S
  * pass the encoding `Json`'s `serializersModule` so registered subtypes can be masked. Defaults to an empty
  * module (sealed masking and non-polymorphic masking need no module).
  */
-fun <T> maskingSerializer(
+public fun <T> maskingSerializer(
     delegate: KSerializer<T>,
     engine: MaskingEngine,
     registry: Map<String, String>,
@@ -39,7 +39,7 @@ fun <T> maskingSerializer(
 ): KSerializer<T> = MaskingJsonTransformer(delegate, engine, registry, classDiscriminator, serializersModule)
 
 /** Encodes masked values with kotlinx.serialization, supplying the caller per encode. */
-object IhawuKotlinxJson {
+public object IhawuKotlinxJson {
     /**
      * Encodes [value] with [serializer] (a [maskingSerializer]) for [principal], masking as it writes.
      * The per-call context is installed for the duration of this synchronous encode and cleared after,
@@ -47,7 +47,7 @@ object IhawuKotlinxJson {
      * `{}`. For coroutine callers (e.g. Ktor, #82) use `maskingContextElement(principal)` on the JVM
      * instead of this helper.
      */
-    fun <T> encodeToString(
+    public fun <T> encodeToString(
         json: Json,
         principal: IhawuPrincipal?,
         serializer: SerializationStrategy<T>,

@@ -9,7 +9,7 @@ package org.ihawu.core.masking
  * `HIDE` depends only on nullability (see [omittable]). A serialization backend computes these two
  * facts from its own type system and calls [of]; nothing here references a serialization library.
  */
-enum class MaskingCapability {
+public enum class MaskingCapability {
     /** Textual, non-null. REDACT -> placeholder; HIDE -> reject (omitting a required field breaks the schema). */
     TEXTUAL_REQUIRED,
 
@@ -24,7 +24,7 @@ enum class MaskingCapability {
     ;
 
     /** HIDE: whether this field may be omitted without breaking the declared schema. */
-    val omittable: Boolean
+    public val omittable: Boolean
         get() = this == TEXTUAL_OPTIONAL || this == NULLABLE
 
     /**
@@ -32,7 +32,7 @@ enum class MaskingCapability {
      * the placeholder for a textual field, JSON null for a nullable non-textual field, or a fail-closed
      * [MaskingDecision.Omit] when no contract-safe value exists.
      */
-    fun redactDecision(placeholder: String): MaskingDecision =
+    public fun redactDecision(placeholder: String): MaskingDecision =
         when (this) {
             TEXTUAL_REQUIRED, TEXTUAL_OPTIONAL -> MaskingDecision.WriteString(placeholder)
             NULLABLE -> MaskingDecision.WriteNull
@@ -43,18 +43,18 @@ enum class MaskingCapability {
      * Why [strategy] cannot be honoured on this field, or `null` if it can. The single predicate shared
      * by the runtime engine and the startup validator, so they agree by construction.
      */
-    fun unenforceableReason(strategy: MaskingStrategy): FailReason? =
+    public fun unenforceableReason(strategy: MaskingStrategy): FailReason? =
         when (strategy) {
             MaskingStrategy.HIDE -> if (omittable) null else FailReason.HIDE_NON_NULLABLE
             MaskingStrategy.REDACT -> if (this == UNSAFE) FailReason.REDACT_UNSAFE else null
         }
 
-    companion object {
+    public companion object {
         /**
          * Classifies a field from the two neutral facts a backend can supply for any type system:
          * whether it is [isTextual] (masks to a string placeholder) and whether it is [nullable].
          */
-        fun of(
+        public fun of(
             isTextual: Boolean,
             nullable: Boolean,
         ): MaskingCapability =

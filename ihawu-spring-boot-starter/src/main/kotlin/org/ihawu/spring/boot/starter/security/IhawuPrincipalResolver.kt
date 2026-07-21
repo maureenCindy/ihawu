@@ -13,7 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails
  *
  * Unauthenticated or [AnonymousAuthenticationToken] requests resolve to `null` (fail closed).
  */
-class IhawuPrincipalResolver : PrincipalResolver {
+public class IhawuPrincipalResolver : PrincipalResolver {
     override fun resolve(authentication: Authentication): IhawuPrincipal? =
         if (!authentication.isAuthenticated || authentication is AnonymousAuthenticationToken) {
             null

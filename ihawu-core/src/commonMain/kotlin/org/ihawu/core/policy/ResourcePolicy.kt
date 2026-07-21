@@ -7,7 +7,7 @@ package org.ihawu.core.policy
  * @property roleFieldPolicies The per-role [FieldPolicy] lists, keyed by role name. `null` (the default)
  * means no role-specific rules are configured for the resource, so resolution yields an empty list.
  */
-data class ResourcePolicy(
+public data class ResourcePolicy(
     val resourceName: String,
     val roleFieldPolicies: Map<String, List<FieldPolicy>>? = null,
 )

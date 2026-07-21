@@ -11,7 +11,7 @@ import org.ihawu.core.masking.MaskingFailureSink
  * onFailClosed = CompositeMaskingFailureSink(myLoggingSink, MicrometerMaskingFailureSink(registry))
  * ```
  */
-class CompositeMaskingFailureSink(
+public class CompositeMaskingFailureSink(
     private vararg val sinks: MaskingFailureSink,
 ) : MaskingFailureSink {
     override fun onFailClosed(

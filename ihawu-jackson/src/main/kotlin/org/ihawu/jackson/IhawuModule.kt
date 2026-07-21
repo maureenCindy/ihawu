@@ -30,7 +30,7 @@ import org.ihawu.core.policy.ResourcePolicyResolver
  * @sample org.ihawu.samples.serialization.maskFailsClosedWithoutPrincipal
  * @sample org.ihawu.samples.serialization.failClosedOnResolverError
  */
-class IhawuModule(
+public class IhawuModule(
     private val resolver: ResourcePolicyResolver,
     private val failureSink: MaskingFailureSink = Slf4jMaskingFailureSink(),
     private val resolverErrorMode: ResolverErrorMode = ResolverErrorMode.MASK_ALL,
