@@ -1,0 +1,62 @@
+public final class org/ihawu/spring/boot/starter/configuration/ConfigResourcePolicyProvider : org/ihawu/spring/boot/starter/configuration/ResourcePolicyProvider {
+	public fun <init> (Ljava/util/List;)V
+	public fun getResourcePolicies ()Ljava/util/List;
+}
+
+public final class org/ihawu/spring/boot/starter/configuration/IhawuProperties {
+	public fun <init> ()V
+	public final fun getEnabled ()Z
+	public final fun getOnPolicyFailure ()Lorg/ihawu/core/masking/ResolverErrorMode;
+	public final fun getPolicies ()Ljava/util/List;
+	public final fun getResourceBasePackages ()Ljava/util/List;
+	public final fun getValidateResourceContract ()Z
+	public final fun setEnabled (Z)V
+	public final fun setOnPolicyFailure (Lorg/ihawu/core/masking/ResolverErrorMode;)V
+	public final fun setPolicies (Ljava/util/List;)V
+	public final fun setResourceBasePackages (Ljava/util/List;)V
+	public final fun setValidateResourceContract (Z)V
+}
+
+public final class org/ihawu/spring/boot/starter/configuration/IhawuProperties$FieldPolicyProperties {
+	public fun <init> (Ljava/lang/String;Lorg/ihawu/core/masking/MaskingStrategy;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lorg/ihawu/core/masking/MaskingStrategy;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lorg/ihawu/core/masking/MaskingStrategy;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lorg/ihawu/core/masking/MaskingStrategy;Ljava/lang/String;)Lorg/ihawu/spring/boot/starter/configuration/IhawuProperties$FieldPolicyProperties;
+	public static synthetic fun copy$default (Lorg/ihawu/spring/boot/starter/configuration/IhawuProperties$FieldPolicyProperties;Ljava/lang/String;Lorg/ihawu/core/masking/MaskingStrategy;Ljava/lang/String;ILjava/lang/Object;)Lorg/ihawu/spring/boot/starter/configuration/IhawuProperties$FieldPolicyProperties;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getField ()Ljava/lang/String;
+	public final fun getPlaceholder ()Ljava/lang/String;
+	public final fun getStrategy ()Lorg/ihawu/core/masking/MaskingStrategy;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/ihawu/spring/boot/starter/configuration/IhawuProperties$PolicyProperties {
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/util/Map;)Lorg/ihawu/spring/boot/starter/configuration/IhawuProperties$PolicyProperties;
+	public static synthetic fun copy$default (Lorg/ihawu/spring/boot/starter/configuration/IhawuProperties$PolicyProperties;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lorg/ihawu/spring/boot/starter/configuration/IhawuProperties$PolicyProperties;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getResource ()Ljava/lang/String;
+	public final fun getRoles ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class org/ihawu/spring/boot/starter/configuration/ResourcePolicyProvider {
+	public abstract fun getResourcePolicies ()Ljava/util/List;
+}
+
+public final class org/ihawu/spring/boot/starter/security/IhawuPrincipalResolver : org/ihawu/spring/boot/starter/security/PrincipalResolver {
+	public fun <init> ()V
+	public fun resolve (Lorg/springframework/security/core/Authentication;)Lorg/ihawu/core/policy/IhawuPrincipal;
+}
+
+public abstract interface class org/ihawu/spring/boot/starter/security/PrincipalResolver {
+	public abstract fun resolve (Lorg/springframework/security/core/Authentication;)Lorg/ihawu/core/policy/IhawuPrincipal;
+}
+

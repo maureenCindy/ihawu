@@ -1,0 +1,184 @@
+public abstract interface annotation class org/ihawu/core/annotation/IhawuResource : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+}
+
+public final class org/ihawu/core/exception/IhawuCoreException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCause ()Ljava/lang/Throwable;
+	public fun getMessage ()Ljava/lang/String;
+}
+
+public final class org/ihawu/core/masking/DefaultMaskingEngine : org/ihawu/core/masking/MaskingEngine {
+	public fun <init> (Lorg/ihawu/core/policy/ResourcePolicyResolver;Lorg/ihawu/core/masking/MaskingFailureSink;Lorg/ihawu/core/masking/ResolverErrorMode;)V
+	public synthetic fun <init> (Lorg/ihawu/core/policy/ResourcePolicyResolver;Lorg/ihawu/core/masking/MaskingFailureSink;Lorg/ihawu/core/masking/ResolverErrorMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun decide (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/MaskingCapability;Lorg/ihawu/core/masking/MaskingContext;)Lorg/ihawu/core/masking/MaskingDecision;
+}
+
+public final class org/ihawu/core/masking/FailReason : java/lang/Enum {
+	public static final field HIDE_NON_NULLABLE Lorg/ihawu/core/masking/FailReason;
+	public static final field NO_PRINCIPAL Lorg/ihawu/core/masking/FailReason;
+	public static final field REDACT_UNSAFE Lorg/ihawu/core/masking/FailReason;
+	public static final field RESOLVER_ERROR Lorg/ihawu/core/masking/FailReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/ihawu/core/masking/FailReason;
+	public static fun values ()[Lorg/ihawu/core/masking/FailReason;
+}
+
+public final class org/ihawu/core/masking/MaskingCapability : java/lang/Enum {
+	public static final field Companion Lorg/ihawu/core/masking/MaskingCapability$Companion;
+	public static final field NULLABLE Lorg/ihawu/core/masking/MaskingCapability;
+	public static final field TEXTUAL_OPTIONAL Lorg/ihawu/core/masking/MaskingCapability;
+	public static final field TEXTUAL_REQUIRED Lorg/ihawu/core/masking/MaskingCapability;
+	public static final field UNSAFE Lorg/ihawu/core/masking/MaskingCapability;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getOmittable ()Z
+	public final fun redactDecision (Ljava/lang/String;)Lorg/ihawu/core/masking/MaskingDecision;
+	public final fun unenforceableReason (Lorg/ihawu/core/masking/MaskingStrategy;)Lorg/ihawu/core/masking/FailReason;
+	public static fun valueOf (Ljava/lang/String;)Lorg/ihawu/core/masking/MaskingCapability;
+	public static fun values ()[Lorg/ihawu/core/masking/MaskingCapability;
+}
+
+public final class org/ihawu/core/masking/MaskingCapability$Companion {
+	public final fun of (ZZ)Lorg/ihawu/core/masking/MaskingCapability;
+}
+
+public abstract interface class org/ihawu/core/masking/MaskingContext {
+	public abstract fun getPrincipal ()Lorg/ihawu/core/policy/IhawuPrincipal;
+	public abstract fun memoize (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+}
+
+public abstract interface class org/ihawu/core/masking/MaskingDecision {
+}
+
+public final class org/ihawu/core/masking/MaskingDecision$Omit : org/ihawu/core/masking/MaskingDecision {
+	public fun <init> ()V
+	public fun <init> (Lorg/ihawu/core/masking/FailReason;)V
+	public synthetic fun <init> (Lorg/ihawu/core/masking/FailReason;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/ihawu/core/masking/FailReason;
+	public final fun copy (Lorg/ihawu/core/masking/FailReason;)Lorg/ihawu/core/masking/MaskingDecision$Omit;
+	public static synthetic fun copy$default (Lorg/ihawu/core/masking/MaskingDecision$Omit;Lorg/ihawu/core/masking/FailReason;ILjava/lang/Object;)Lorg/ihawu/core/masking/MaskingDecision$Omit;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Lorg/ihawu/core/masking/FailReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/ihawu/core/masking/MaskingDecision$Pass : org/ihawu/core/masking/MaskingDecision {
+	public static final field INSTANCE Lorg/ihawu/core/masking/MaskingDecision$Pass;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/ihawu/core/masking/MaskingDecision$WriteNull : org/ihawu/core/masking/MaskingDecision {
+	public static final field INSTANCE Lorg/ihawu/core/masking/MaskingDecision$WriteNull;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/ihawu/core/masking/MaskingDecision$WriteString : org/ihawu/core/masking/MaskingDecision {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lorg/ihawu/core/masking/MaskingDecision$WriteString;
+	public static synthetic fun copy$default (Lorg/ihawu/core/masking/MaskingDecision$WriteString;Ljava/lang/String;ILjava/lang/Object;)Lorg/ihawu/core/masking/MaskingDecision$WriteString;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class org/ihawu/core/masking/MaskingEngine {
+	public abstract fun decide (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/MaskingCapability;Lorg/ihawu/core/masking/MaskingContext;)Lorg/ihawu/core/masking/MaskingDecision;
+}
+
+public abstract interface class org/ihawu/core/masking/MaskingFailureSink {
+	public abstract fun onFailClosed (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/FailReason;Ljava/lang/Throwable;)V
+}
+
+public final class org/ihawu/core/masking/MaskingResolverException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun getCause ()Ljava/lang/Throwable;
+	public final fun getResource ()Ljava/lang/String;
+}
+
+public final class org/ihawu/core/masking/MaskingStrategy : java/lang/Enum {
+	public static final field HIDE Lorg/ihawu/core/masking/MaskingStrategy;
+	public static final field REDACT Lorg/ihawu/core/masking/MaskingStrategy;
+	public final fun getDefaultPlaceholder ()Ljava/lang/String;
+	public final fun getDescription ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getSecurityLevel ()I
+	public static fun valueOf (Ljava/lang/String;)Lorg/ihawu/core/masking/MaskingStrategy;
+	public static fun values ()[Lorg/ihawu/core/masking/MaskingStrategy;
+}
+
+public final class org/ihawu/core/masking/ResolverErrorMode : java/lang/Enum {
+	public static final field FAIL_REQUEST Lorg/ihawu/core/masking/ResolverErrorMode;
+	public static final field MASK_ALL Lorg/ihawu/core/masking/ResolverErrorMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/ihawu/core/masking/ResolverErrorMode;
+	public static fun values ()[Lorg/ihawu/core/masking/ResolverErrorMode;
+}
+
+public final class org/ihawu/core/policy/CachingResourcePolicyResolver : org/ihawu/core/policy/ResourcePolicyResolver {
+	public fun <init> (Lorg/ihawu/core/policy/ResourcePolicyResolver;)V
+	public fun resolve (Lorg/ihawu/core/policy/IhawuPrincipal;Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class org/ihawu/core/policy/FieldPolicy {
+	public fun <init> (Ljava/lang/String;Lorg/ihawu/core/masking/MaskingStrategy;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lorg/ihawu/core/masking/MaskingStrategy;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lorg/ihawu/core/masking/MaskingStrategy;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lorg/ihawu/core/masking/MaskingStrategy;Ljava/lang/String;)Lorg/ihawu/core/policy/FieldPolicy;
+	public static synthetic fun copy$default (Lorg/ihawu/core/policy/FieldPolicy;Ljava/lang/String;Lorg/ihawu/core/masking/MaskingStrategy;Ljava/lang/String;ILjava/lang/Object;)Lorg/ihawu/core/policy/FieldPolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getField ()Ljava/lang/String;
+	public final fun getPlaceholder ()Ljava/lang/String;
+	public final fun getStrategy ()Lorg/ihawu/core/masking/MaskingStrategy;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/ihawu/core/policy/IhawuPrincipal {
+	public fun <init> (Ljava/lang/String;Ljava/util/Set;Ljava/util/Map;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Set;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/util/Set;Ljava/util/Map;)Lorg/ihawu/core/policy/IhawuPrincipal;
+	public static synthetic fun copy$default (Lorg/ihawu/core/policy/IhawuPrincipal;Ljava/lang/String;Ljava/util/Set;Ljava/util/Map;ILjava/lang/Object;)Lorg/ihawu/core/policy/IhawuPrincipal;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Ljava/util/Map;
+	public final fun getRoles ()Ljava/util/Set;
+	public final fun getUserId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/ihawu/core/policy/ResourcePolicy {
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/util/Map;)Lorg/ihawu/core/policy/ResourcePolicy;
+	public static synthetic fun copy$default (Lorg/ihawu/core/policy/ResourcePolicy;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lorg/ihawu/core/policy/ResourcePolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getResourceName ()Ljava/lang/String;
+	public final fun getRoleFieldPolicies ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class org/ihawu/core/policy/ResourcePolicyResolver {
+	public abstract fun resolve (Lorg/ihawu/core/policy/IhawuPrincipal;Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class org/ihawu/core/policy/RoleBasedResourcePolicyResolver : org/ihawu/core/policy/ResourcePolicyResolver {
+	public fun <init> (Ljava/util/List;)V
+	public final fun getResourcePolicies ()Ljava/util/List;
+	public fun resolve (Lorg/ihawu/core/policy/IhawuPrincipal;Ljava/lang/String;)Ljava/util/List;
+}
+

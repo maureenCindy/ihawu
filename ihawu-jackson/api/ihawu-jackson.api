@@ -1,0 +1,42 @@
+public final class org/ihawu/jackson/IhawuModule : com/fasterxml/jackson/databind/module/SimpleModule {
+	public fun <init> (Lorg/ihawu/core/policy/ResourcePolicyResolver;Lorg/ihawu/core/masking/MaskingFailureSink;Lorg/ihawu/core/masking/ResolverErrorMode;)V
+	public synthetic fun <init> (Lorg/ihawu/core/policy/ResourcePolicyResolver;Lorg/ihawu/core/masking/MaskingFailureSink;Lorg/ihawu/core/masking/ResolverErrorMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun setupModule (Lcom/fasterxml/jackson/databind/Module$SetupContext;)V
+}
+
+public final class org/ihawu/jackson/IhawuSerialization {
+	public static final field INSTANCE Lorg/ihawu/jackson/IhawuSerialization;
+	public static final field PRINCIPAL Ljava/lang/String;
+}
+
+public final class org/ihawu/jackson/JacksonPolicyConfig {
+	public static final field INSTANCE Lorg/ihawu/jackson/JacksonPolicyConfig;
+	public final fun fromJson (Ljava/io/InputStream;)Lorg/ihawu/core/policy/RoleBasedResourcePolicyResolver;
+	public final fun fromJson (Ljava/lang/String;)Lorg/ihawu/core/policy/RoleBasedResourcePolicyResolver;
+}
+
+public final class org/ihawu/jackson/MaskingContractValidator {
+	public static final field INSTANCE Lorg/ihawu/jackson/MaskingContractValidator;
+	public final fun validate (Lcom/fasterxml/jackson/databind/ObjectMapper;Ljava/lang/String;Ljava/lang/Class;Ljava/util/List;)Ljava/util/List;
+}
+
+public final class org/ihawu/jackson/MaskingContractViolation {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/ihawu/jackson/MaskingContractViolation;
+	public static synthetic fun copy$default (Lorg/ihawu/jackson/MaskingContractViolation;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/ihawu/jackson/MaskingContractViolation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getField ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getResource ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/ihawu/jackson/Slf4jMaskingFailureSink : org/ihawu/core/masking/MaskingFailureSink {
+	public fun <init> ()V
+	public fun onFailClosed (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/FailReason;Ljava/lang/Throwable;)V
+}
+

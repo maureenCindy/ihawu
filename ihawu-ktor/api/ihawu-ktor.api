@@ -1,0 +1,36 @@
+public final class org/ihawu/ktor/CompositeMaskingFailureSink : org/ihawu/core/masking/MaskingFailureSink {
+	public fun <init> ([Lorg/ihawu/core/masking/MaskingFailureSink;)V
+	public fun onFailClosed (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/FailReason;Ljava/lang/Throwable;)V
+}
+
+public final class org/ihawu/ktor/IhawuKtorConfig {
+	public fun <init> ()V
+	public final fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun getOnFailClosed ()Lorg/ihawu/core/masking/MaskingFailureSink;
+	public final fun getOnPolicyFailure ()Lorg/ihawu/core/masking/ResolverErrorMode;
+	public final fun getResolvePrincipal ()Lkotlin/jvm/functions/Function2;
+	public final fun policies ([Lorg/ihawu/core/policy/ResourcePolicy;)V
+	public final fun policyResolver (Lorg/ihawu/core/policy/ResourcePolicyResolver;)V
+	public final fun resources ([Lkotlin/Pair;)V
+	public final fun setJson (Lkotlinx/serialization/json/Json;)V
+	public final fun setOnFailClosed (Lorg/ihawu/core/masking/MaskingFailureSink;)V
+	public final fun setOnPolicyFailure (Lorg/ihawu/core/masking/ResolverErrorMode;)V
+	public final fun setResolvePrincipal (Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class org/ihawu/ktor/IhawuKtorKt {
+	public static final fun getIhawuKtor ()Lio/ktor/server/application/ApplicationPlugin;
+	public static final fun ihawuPrincipal (Lio/ktor/server/application/ApplicationCall;)Lorg/ihawu/core/policy/IhawuPrincipal;
+}
+
+public final class org/ihawu/ktor/MaskingContentConverter : io/ktor/serialization/ContentConverter {
+	public fun <init> (Lkotlinx/serialization/json/Json;Lorg/ihawu/core/masking/MaskingEngine;Ljava/util/Map;)V
+	public fun deserialize (Ljava/nio/charset/Charset;Lio/ktor/util/reflect/TypeInfo;Lio/ktor/utils/io/ByteReadChannel;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun serialize (Lio/ktor/http/ContentType;Ljava/nio/charset/Charset;Lio/ktor/util/reflect/TypeInfo;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class org/ihawu/ktor/MicrometerMaskingFailureSink : org/ihawu/core/masking/MaskingFailureSink {
+	public fun <init> (Lio/micrometer/core/instrument/MeterRegistry;)V
+	public fun onFailClosed (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/FailReason;Ljava/lang/Throwable;)V
+}
+
