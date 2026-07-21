@@ -63,7 +63,7 @@ class IhawuObservabilityAutoConfigTest {
 
     @Test
     fun `backs off when the application defines its own MaskingFailureSink`() {
-        val custom = MaskingFailureSink { _, _, _, _ -> }
+        val custom = MaskingFailureSink { _ -> }
 
         runner
             .withBean(MeterRegistry::class.java, { SimpleMeterRegistry() })

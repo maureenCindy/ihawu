@@ -13,8 +13,3 @@ public final class org/ihawu/kotlinx/MaskingContextHolder_jvmKt {
 	public static final fun maskingContextElement (Lorg/ihawu/core/policy/IhawuPrincipal;)Lkotlin/coroutines/CoroutineContext;
 }
 
-public final class org/ihawu/kotlinx/MaskingJsonTransformer : kotlinx/serialization/json/JsonTransformingSerializer {
-	public fun <init> (Lkotlinx/serialization/KSerializer;Lorg/ihawu/core/masking/MaskingEngine;Ljava/util/Map;Ljava/lang/String;Lkotlinx/serialization/modules/SerializersModule;)V
-	public synthetic fun <init> (Lkotlinx/serialization/KSerializer;Lorg/ihawu/core/masking/MaskingEngine;Ljava/util/Map;Ljava/lang/String;Lkotlinx/serialization/modules/SerializersModule;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-}
-

@@ -37,6 +37,6 @@ public final class org/ihawu/jackson/MaskingContractViolation {
 
 public final class org/ihawu/jackson/Slf4jMaskingFailureSink : org/ihawu/core/masking/MaskingFailureSink {
 	public fun <init> ()V
-	public fun onFailClosed (Ljava/lang/String;Ljava/lang/String;Lorg/ihawu/core/masking/FailReason;Ljava/lang/Throwable;)V
+	public fun onFailClosed (Lorg/ihawu/core/masking/MaskingFailure;)V
 }
 

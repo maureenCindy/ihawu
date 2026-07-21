@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
  *
  * @param policies The bound `ihawu.policies` configuration.
  */
-public class ConfigResourcePolicyProvider(
+internal class ConfigResourcePolicyProvider(
     policies: List<PolicyProperties>,
 ) : ResourcePolicyProvider {
     private val resourcePolicies: List<ResourcePolicy> = policies.validated().toResourcePolicies()

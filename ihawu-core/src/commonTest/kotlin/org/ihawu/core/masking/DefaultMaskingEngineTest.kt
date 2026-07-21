@@ -33,13 +33,8 @@ private class RecordingSink : MaskingFailureSink {
 
     val events = mutableListOf<Event>()
 
-    override fun onFailClosed(
-        resource: String,
-        field: String?,
-        reason: FailReason,
-        cause: Throwable?,
-    ) {
-        events += Event(resource, field, reason, cause)
+    override fun onFailClosed(failure: MaskingFailure) {
+        events += Event(failure.resource, failure.field, failure.reason, failure.cause)
     }
 }
 
