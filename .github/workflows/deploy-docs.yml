@@ -33,7 +33,7 @@ jobs:
           java-version: 17
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v6.2.0
 
       # docs.ihawu.org deploys from main (a branch build), so the project version would be
       # 0.1.0-SNAPSHOT. Label the site with the latest release tag instead, so it matches the
