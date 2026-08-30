@@ -16,7 +16,7 @@ dependencies {
     jmh(project(":ihawu-kotlinx"))
     jmh("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.1")
     // ihawu-kotlinx keeps kotlinx-serialization as an implementation detail; the benchmark uses it directly.
-    jmh("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    jmh("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 }
 
 allOpen {
