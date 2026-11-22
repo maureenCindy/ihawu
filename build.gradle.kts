@@ -7,7 +7,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0" apply false
     id("org.jetbrains.kotlinx.kover") version "0.9.8" apply false
     id("com.vanniktech.maven.publish") version "0.30.0" apply false
-    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.1"
+    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.2"
 }
 
 // Locks the public ABI of the published modules (#119, road to 1.0): each module's surface is dumped to
