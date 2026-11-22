@@ -33,7 +33,7 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
             // The benchmark compares this backend against the Jackson one on the same payload.
             implementation(project(":ihawu-jackson"))
-            implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.1")
+            implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.23.0")
         }
     }
 }
